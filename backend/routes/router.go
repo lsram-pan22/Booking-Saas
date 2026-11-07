@@ -36,7 +36,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		MaxAge: 12 * time.Hour,
 	}))
 
-	api := router.Group("/api")
+	api := router.Group("/api/v1")
 
 	// Health Check
 	api.GET("/health", func(c *gin.Context) {
@@ -48,6 +48,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 
 	// Feature Routes
 	SuperAdminRoutes(api, utils.DB, cfg)
+	TenantRoutes(api, utils.DB, cfg)
 
 	return router
 }

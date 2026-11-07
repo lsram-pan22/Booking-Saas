@@ -16,7 +16,7 @@ import (
 func expiredAdminToken(t *testing.T, secret string) string {
 	t.Helper()
 	claims := utils.JWTClaims{
-		UserID: 1, Role: utils.RoleSuperAdmin,
+		UserID: "11111111-1111-4111-8111-111111111111", Role: utils.RoleSuperAdmin,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "booking-saas",
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-time.Hour)),
@@ -35,11 +35,11 @@ func TestPackageRoutesRejectNonSuperAdmins(t *testing.T) {
 	cfg := &config.Config{JWT: config.JWTConfig{Secret: secret}}
 	router := gin.New()
 	// A nil database ensures denied requests cannot reach repository operations.
-	SuperAdminRoutes(router.Group("/api"), nil, cfg)
+	SuperAdminRoutes(router.Group("/api/v1"), nil, cfg)
 	endpoints := []struct{ method, path string }{
-		{"GET", "/api/super-admin/packages"},
-		{"POST", "/api/super-admin/packages"},
-		{"PUT", "/api/super-admin/packages/2cd5d4ae-871b-46f6-ab6e-b2d87d51c231"},
+		{"GET", "/api/v1/super-admin/packages"},
+		{"POST", "/api/v1/super-admin/packages"},
+		{"PUT", "/api/v1/super-admin/packages/2cd5d4ae-871b-46f6-ab6e-b2d87d51c231"},
 	}
 	tests := []struct {
 		name, role string
@@ -59,7 +59,7 @@ func TestPackageRoutesRejectNonSuperAdmins(t *testing.T) {
 				req := httptest.NewRequest(endpoint.method, endpoint.path, strings.NewReader(`{}`))
 				req.Header.Set("Content-Type", "application/json")
 				if tt.expires != 0 {
-					token, err := utils.GenerateJWT(secret, time.Hour, 1, "user@example.com", tt.role)
+					token, err := utils.GenerateJWT(secret, time.Hour, "11111111-1111-4111-8111-111111111111", "user@example.com", tt.role)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -78,11 +78,11 @@ func TestPackageRoutesRejectNonSuperAdmins(t *testing.T) {
 	}
 
 	// A valid admin reaches request validation (400), rather than authorization denial.
-	token, err := utils.GenerateJWT(secret, time.Hour, 1, "admin@example.com", utils.RoleSuperAdmin)
+	token, err := utils.GenerateJWT(secret, time.Hour, "11111111-1111-4111-8111-111111111111", "admin@example.com", utils.RoleSuperAdmin)
 	if err != nil {
 		t.Fatal(err)
 	}
-	req := httptest.NewRequest("POST", "/api/super-admin/packages", strings.NewReader(`{}`))
+	req := httptest.NewRequest("POST", "/api/v1/super-admin/packages", strings.NewReader(`{}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
 	response := httptest.NewRecorder()

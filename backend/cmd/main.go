@@ -29,9 +29,9 @@ func main() {
 	router := routes.SetupRouter(cfg)
 
 	// Start HTTP Server
-	address := ":" + cfg.AppPort
+	address := "127.0.0.1:" + cfg.AppPort
 
-	log.Printf("Booking SaaS API running at http://localhost%s", address)
+	log.Printf("Booking SaaS API running at http://%s", address)
 
 	if err := router.Run(address); err != nil {
 		log.Fatalf("Server failed: %v", err)

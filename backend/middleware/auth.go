@@ -26,7 +26,7 @@ func RequireJWT(secret string) gin.HandlerFunc {
 			return []byte(secret), nil
 		}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
 			jwt.WithIssuer("booking-saas"), jwt.WithExpirationRequired(), jwt.WithIssuedAt())
-		if err != nil || !token.Valid || claims.UserID <= 0 {
+		if err != nil || !token.Valid || !utils.ValidUserID(claims.UserID) {
 			unauthorized(c)
 			return
 		}

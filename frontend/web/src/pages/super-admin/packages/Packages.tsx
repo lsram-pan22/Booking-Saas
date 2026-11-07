@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Alert, App, Button, Card, Drawer, Flex, Form, Input, InputNumber, Select, Space, Switch, Table, Tag, Typography } from "antd";
-import { listPackages, savePackage } from "../../../api/packages.api";
-import type { Package, PackageInput } from "../../../api/packages.api";
+import { listPackages, savePackage } from "../../../api/super-admin/packages.api";
+import type { Package, PackageForm } from "../../../types/super-admin/package.type";
 
-type PackageForm = Omit<PackageInput, "monthly_price_satang"> & { monthly_price: number };
+
 const defaults: PackageForm = {
-  code: "", name: "", description: "", monthly_price: 0, branch_limit: 1, user_limit: 2,
-  staff_management: "basic", reports: "basic", export_excel: false, multi_branch: false,
+  code: "", name: "", description: "", monthly_price: 0, shop_limit: 1, user_limit: 2,
+  staff_management: "basic", reports: "basic", export_excel: false, 
   api_webhook: false, active: true, sort_order: 0,
 };
 const price = (satang: number) => (satang / 100).toLocaleString("th-TH", { style: "currency", currency: "THB" });
@@ -65,9 +65,9 @@ export default function Packages() {
         <Table<Package> rowKey="id" dataSource={items} loading={loading} scroll={{ x: 1150 }} pagination={{ pageSize: 10 }} columns={[
           { title: "แพ็กเกจ", dataIndex: "name", render: (_, p) => <><Typography.Text strong>{p.name}</Typography.Text><br /><Typography.Text type="secondary">{p.code}</Typography.Text></> },
           { title: "ราคา / เดือน", dataIndex: "monthly_price_satang", render: price },
-          { title: "สาขา", dataIndex: "branch_limit" },
+          { title: "ร้านค้า", dataIndex: "shop_limit" },
           { title: "บัญชีผู้ใช้", dataIndex: "user_limit" },
-          { title: "ฟีเจอร์", render: (_, p) => <Flex wrap gap={4}><Tag>พนักงาน: {p.staff_management === "basic" ? "พื้นฐาน" : "เต็มรูปแบบ"}</Tag><Tag>รายงาน: {p.reports === "basic" ? "พื้นฐาน" : "ขั้นสูง"}</Tag>{p.export_excel && <Tag>Excel</Tag>}{p.multi_branch && <Tag>หลายสาขา</Tag>}{p.api_webhook && <Tag>API / Webhook</Tag>}</Flex> },
+          { title: "ฟีเจอร์", render: (_, p) => <Flex wrap gap={4}><Tag>พนักงาน: {p.staff_management === "basic" ? "พื้นฐาน" : "เต็มรูปแบบ"}</Tag><Tag>รายงาน: {p.reports === "basic" ? "พื้นฐาน" : "ขั้นสูง"}</Tag>{p.export_excel && <Tag>Excel</Tag>}{p.api_webhook && <Tag>API / Webhook</Tag>}</Flex> },
           { title: "สถานะ", dataIndex: "active", render: (active: boolean) => <Tag color={active ? "green" : "default"}>{active ? "เปิดรับสมัคร" : "ปิดรับสมัคร"}</Tag> },
           { title: "", render: (_, p) => <Button onClick={() => edit(p)}>แก้ไข</Button> },
         ]} />
@@ -91,13 +91,12 @@ export default function Packages() {
         <Form.Item name="description" label="รายละเอียด"><Input.TextArea maxLength={2000} rows={2} /></Form.Item>
         <Form.Item name="monthly_price" label="ราคา / เดือน (บาท)" rules={[{ required: true }]}><InputNumber min={0} max={1000000} precision={2} style={{ width: "100%" }} /></Form.Item>
         <Flex gap={16}>
-          <Form.Item name="branch_limit" label="จำนวนสาขา" rules={[{ required: true }]}><InputNumber min={1} max={100000} precision={0} /></Form.Item>
+          <Form.Item name="shop_limit" label="จำนวนร้านค้า" rules={[{ required: true }]}><InputNumber min={1} max={100000} precision={0} /></Form.Item>
           <Form.Item name="user_limit" label="บัญชีผู้ใช้ (รวม Owner)" rules={[{ required: true }]}><InputNumber min={1} max={100000} precision={0} /></Form.Item>
         </Flex>
         <Form.Item name="staff_management" label="จัดการพนักงาน" rules={[{ required: true }]}><Select options={[{ value: "basic", label: "พื้นฐาน" }, { value: "full", label: "เต็มรูปแบบ" }]} /></Form.Item>
         <Form.Item name="reports" label="รายงาน" rules={[{ required: true }]}><Select options={[{ value: "basic", label: "พื้นฐาน" }, { value: "advanced", label: "ขั้นสูง" }]} /></Form.Item>
         <Form.Item name="export_excel" label="Export Excel" valuePropName="checked"><Switch /></Form.Item>
-        <Form.Item name="multi_branch" label="จัดการหลายสาขา" valuePropName="checked" dependencies={["branch_limit"]} rules={[({ getFieldValue }) => ({ validator: (_, value) => getFieldValue("branch_limit") > 1 && !value ? Promise.reject(new Error("ต้องเปิดเมื่อแพ็กเกจรองรับมากกว่า 1 สาขา")) : Promise.resolve() })]}><Switch /></Form.Item>
         <Form.Item name="api_webhook" label="API / Webhook" valuePropName="checked"><Switch /></Form.Item>
         <Form.Item name="sort_order" label="ลำดับแสดงผล" rules={[{ required: true }]}><InputNumber min={0} max={100000} precision={0} /></Form.Item>
         <Form.Item name="active" label="เปิดให้ Owner สมัคร" valuePropName="checked"><Switch /></Form.Item>

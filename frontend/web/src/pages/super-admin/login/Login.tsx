@@ -15,8 +15,8 @@ import {
   SafetyCertificateOutlined,
 } from "@ant-design/icons";
 import { Navigate, useNavigate } from "react-router-dom";
-import { loginSuperAdmin } from "../../../api/auth.api";
-import type { LoginRequest } from "../../../types/auth.type";
+import { loginSuperAdmin } from "../../../api/super-admin/auth.api";
+import type { LoginRequest } from "../../../types/shared/auth.type";
 import {
   saveAuthSession,
   isAuthenticated,
@@ -29,7 +29,7 @@ export default function Login() {
   const { message } = App.useApp();
   const [loading, setLoading] = useState(false);
 
-  if (isAuthenticated()) {
+  if (isAuthenticated("super_admin")) {
     return <Navigate to="/super-admin/dashboard" replace />;
   }
 

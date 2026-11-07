@@ -16,7 +16,7 @@ func TestSuperAdminAuthorization(t *testing.T) {
 	const secret = "test-secret-for-jwt-authorization"
 	now := time.Now()
 	base := utils.JWTClaims{
-		UserID: 1, Role: "super_admin",
+		UserID: "11111111-1111-4111-8111-111111111111", Role: "super_admin",
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer: "booking-saas", IssuedAt: jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(time.Hour)),
@@ -51,7 +51,7 @@ func TestSuperAdminAuthorization(t *testing.T) {
 		{name: "missing expiry", mutate: func(c *utils.JWTClaims) { c.ExpiresAt = nil }, status: 401},
 		{name: "wrong issuer", mutate: func(c *utils.JWTClaims) { c.Issuer = "other" }, status: 401},
 		{name: "future issued", mutate: func(c *utils.JWTClaims) { c.IssuedAt = jwt.NewNumericDate(now.Add(time.Hour)) }, status: 401},
-		{name: "invalid user", mutate: func(c *utils.JWTClaims) { c.UserID = 0 }, status: 401},
+		{name: "invalid user", mutate: func(c *utils.JWTClaims) { c.UserID = "invalid" }, status: 401},
 		{name: "wrong role", mutate: func(c *utils.JWTClaims) { c.Role = "admin" }, status: 403},
 		{name: "missing role", mutate: func(c *utils.JWTClaims) { c.Role = "" }, status: 403},
 	}
@@ -78,7 +78,7 @@ func TestSuperAdminAuthorization(t *testing.T) {
 			router.GET("/protected", RequireJWT(secret), RequireRole("super_admin"), func(c *gin.Context) {
 				called = true
 				claims := c.MustGet(ClaimsKey).(*utils.JWTClaims)
-				if claims.UserID != 1 {
+				if claims.UserID != "11111111-1111-4111-8111-111111111111" {
 					t.Error("unexpected authenticated user")
 				}
 				c.Status(200)
@@ -126,7 +126,7 @@ func TestSharedRoleAuthorization(t *testing.T) {
 	for _, policy := range policies {
 		for _, role := range roles {
 			t.Run(policy.name+"/"+role, func(t *testing.T) {
-				token, err := utils.GenerateJWT(secret, time.Hour, 42, "user@example.com", role)
+				token, err := utils.GenerateJWT(secret, time.Hour, "42424242-4242-4242-8242-424242424242", "user@example.com", role)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -139,7 +139,7 @@ func TestSharedRoleAuthorization(t *testing.T) {
 				router := gin.New()
 				router.GET("/", RequireJWT(secret), RequireRole(policy.allowed...), func(c *gin.Context) {
 					claims, ok := AuthClaims(c)
-					if !ok || claims.UserID != 42 || claims.Role != role {
+					if !ok || claims.UserID != "42424242-4242-4242-8242-424242424242" || claims.Role != role {
 						t.Error("incorrect verified claims")
 					}
 					c.Status(200)

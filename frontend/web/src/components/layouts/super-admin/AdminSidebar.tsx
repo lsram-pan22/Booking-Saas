@@ -12,14 +12,10 @@ import {
   MenuFoldOutlined,
 } from "@ant-design/icons";
 import { useLocation, useNavigate } from "react-router-dom";
+import type { AdminSidebarProps } from "../../../types/super-admin/layout.type";
 
 const { Sider } = Layout;
 const { Title } = Typography;
-
-interface AdminSidebarProps {
-  collapsed: boolean;
-  onToggle: () => void;
-}
 
 const menuItems = [
   {

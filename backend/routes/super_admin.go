@@ -2,12 +2,12 @@ package routes
 
 import (
 	"booking-saas/config"
-	superAdmin "booking-saas/controllers/auth/super_admin/ctrls"
-	superAdminRepo "booking-saas/controllers/auth/super_admin/repositories"
-	superAdminUsecase "booking-saas/controllers/auth/super_admin/usecases"
-	packageCtrl "booking-saas/controllers/packages/ctrls"
-	packageRepo "booking-saas/controllers/packages/repositories"
-	packageUsecase "booking-saas/controllers/packages/usecases"
+	superAdmin "booking-saas/controllers/super_admin/auth/ctrls"
+	superAdminRepo "booking-saas/controllers/super_admin/auth/repositories"
+	superAdminUsecase "booking-saas/controllers/super_admin/auth/usecases"
+	packageCtrl "booking-saas/controllers/super_admin/packages/ctrls"
+	packageRepo "booking-saas/controllers/super_admin/packages/repositories"
+	packageUsecase "booking-saas/controllers/super_admin/packages/usecases"
 	"booking-saas/middleware"
 	"booking-saas/utils"
 

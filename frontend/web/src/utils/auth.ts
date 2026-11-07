@@ -2,7 +2,7 @@
 import type {
   AuthSession,
   SuperAdminUser,
-} from "../types/auth.type";
+} from "../types/shared/auth.type";
 
 const TOKEN_KEY = "token";
 const USER_KEY = "user";
@@ -10,6 +10,8 @@ const EXPIRES_KEY = "expires_at";
 
 // Save Login Session
 export function saveAuthSession(data: AuthSession) {
+  sessionStorage.removeItem("tenant_access_token");
+  sessionStorage.removeItem("tenant_expires_at");
   sessionStorage.setItem(TOKEN_KEY, data.access_token);
 
   if (data.user) {
@@ -47,6 +49,10 @@ export function getAccessToken(): string | null {
 }
 
 // Get User
+export function updateCurrentUser(user: SuperAdminUser) {
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
 export function getCurrentUser(): SuperAdminUser | null {
   const stored = sessionStorage.getItem(USER_KEY);
 
@@ -61,8 +67,15 @@ export function getCurrentUser(): SuperAdminUser | null {
 }
 
 // Check Login
-export function isAuthenticated(): boolean {
-  return Boolean(getAccessToken());
+export function isAuthenticated(role?: string): boolean {
+  return Boolean(getAccessToken()) && (!role || getCurrentUser()?.role === role);
+}
+
+export function isTenantAuthenticated(): boolean {
+  if (!getAccessToken()) return false;
+  const user = getCurrentUser();
+  // Accept legacy sessions until /me refreshes their tenant role.
+  return Boolean(user && (user.role === "user" || (user.system_role === "user" && (user.role === "owner" || user.role === "staff"))));
 }
 
 // Clear Session
@@ -71,8 +84,8 @@ export function clearAuthSession() {
   sessionStorage.removeItem(USER_KEY);
   sessionStorage.removeItem(EXPIRES_KEY);
 
-  // ล้าง Key จากเวอร์ชันก่อนหน้าด้วย
-  sessionStorage.clear();
+  sessionStorage.removeItem("tenant_access_token");
+  sessionStorage.removeItem("tenant_expires_at");
 }
 
 // Logout

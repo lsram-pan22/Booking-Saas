@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -14,8 +15,14 @@ const (
 	RoleStaff      = "staff"
 )
 
+var userIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+func ValidUserID(id string) bool {
+	return id != "00000000-0000-0000-0000-000000000000" && userIDPattern.MatchString(id)
+}
+
 type JWTClaims struct {
-	UserID int64  `json:"user_id"`
+	UserID string `json:"user_id"`
 	Email  string `json:"email"`
 	Role   string `json:"role"`
 
@@ -48,10 +55,13 @@ func CheckPassword(password string, hashedPassword string) bool {
 func GenerateJWT(
 	secret string,
 	expiresIn time.Duration,
-	userID int64,
+	userID string,
 	email string,
 	role string,
 ) (string, error) {
+	if !ValidUserID(userID) {
+		return "", fmt.Errorf("invalid user UUID")
+	}
 
 	if secret == "" {
 		return "", fmt.Errorf("JWT secret is empty")
