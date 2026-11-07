@@ -1,9 +1,6 @@
 
 import { Navigate, Route, Routes } from "react-router-dom";
 
-import AdminLayout from "../components/layouts/AdminLayout";
-import ProtectedRoute from "../components/layouts/ProtectedRoute";
-
 import Login from "../pages/super-admin/login/Login";
 import Dashboard from "../pages/super-admin/dashboard/Dashboard";
 import Businesses from "../pages/super-admin/businesses/Businesses";
@@ -12,6 +9,8 @@ import Packages from "../pages/super-admin/packages/Packages";
 import Subscriptions from "../pages/super-admin/subscriptions/Subscriptions";
 import Reports from "../pages/super-admin/reports/Reports";
 import Settings from "../pages/super-admin/settings/Settings";
+import ProtectedRoute from "../components/layouts/super-admin/ProtectedRoute";
+import AdminLayout from "../components/layouts/super-admin/AdminLayout";
 
 export default function AppRoutes() {
   return (

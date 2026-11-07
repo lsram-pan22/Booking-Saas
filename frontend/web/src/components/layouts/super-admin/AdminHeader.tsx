@@ -6,7 +6,7 @@ import {
   LogoutOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { logout, getCurrentUser } from "../../utils/auth";
+import { getCurrentUser, logout } from "../../../utils/auth";
 
 const { Header } = Layout;
 const { Text } = Typography;
