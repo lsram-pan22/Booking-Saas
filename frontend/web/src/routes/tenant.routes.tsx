@@ -11,6 +11,7 @@ import Shop from "../pages/tenant/shops/Shop";
 import OwnerRoute from "../components/layouts/tenant/OwnerRoute";
 import Home from "../pages/tenant/home/Home";
 import ShopDashboard from "../pages/tenant/shops/Dashboard";
+import Services from "../pages/tenant/services/Services";
 
 export const tenantRoutes: RouteObject = {
   path: "/tenant",
@@ -24,6 +25,7 @@ export const tenantRoutes: RouteObject = {
         { path: "home", element: <Home /> },
         { path: "staff", element: <ShopDashboard /> },
         { path: "shops/:shopID/dashboard", element: <ShopDashboard /> },
+        { path: "shops/:shopID/services", element: <Services /> },
         { element: <OwnerRoute />, children: [
           { path: "dashboard", element: <Dashboard /> },
           { path: "packages", element: <Packages /> },

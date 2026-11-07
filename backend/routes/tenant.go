@@ -20,6 +20,7 @@ func TenantRoutes(
 	cfg *config.Config,
 ) {
 	auth := router.Group("/tenant")
+	tenantServiceRoutes(auth, db, cfg)
 
 	repo := repositories.NewRegisterRepository(db)
 	usecase := usecases.NewRegisterUsecase(repo)
