@@ -1,0 +1,36 @@
+
+{
+  "common": {
+    "app_name": "Booking SaaS",
+    "email": "อีเมล",
+    "password": "รหัสผ่าน",
+    "phone": "เบอร์โทรศัพท์",
+    "full_name": "ชื่อ-นามสกุล",
+    "confirm_password": "ยืนยันรหัสผ่าน",
+    "remember_me": "จดจำฉัน",
+    "forgot_password": "ลืมรหัสผ่าน?",
+    "sign_in": "เข้าสู่ระบบ",
+    "sign_up": "สมัครสมาชิก",
+    "loading": "กำลังดำเนินการ..."
+  },
+  "auth": {
+    "welcome_back": "ยินดีต้อนรับกลับมา",
+    "login_description": "เข้าสู่ระบบเพื่อใช้งานบัญชีของคุณ",
+    "create_account": "สร้างบัญชีใหม่",
+    "register_description": "สมัครสมาชิกเพื่อเริ่มต้นใช้งานระบบ",
+    "dont_have_account": "ยังไม่มีบัญชี?",
+    "already_have_account": "มีบัญชีอยู่แล้ว?",
+    "start_journey": "เริ่มต้นธุรกิจของคุณ",
+    "grow_business": "เติบโตไปกับเรา",
+    "terms": "ฉันยอมรับเงื่อนไขการใช้งานและนโยบายความเป็นส่วนตัว",
+    "invalid_credentials": "อีเมลหรือรหัสผ่านไม่ถูกต้อง"
+  },
+  "validation": {
+    "required": "กรุณากรอก{{field}}",
+    "invalid_email": "รูปแบบอีเมลไม่ถูกต้อง",
+    "password_min": "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร",
+    "password_mismatch": "รหัสผ่านไม่ตรงกัน",
+    "invalid_phone": "กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง",
+    "accept_terms": "กรุณายอมรับเงื่อนไขการใช้งาน"
+  }
+}
