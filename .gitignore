@@ -4,6 +4,7 @@
 !.env.example
 
 # Go
+backend/.build/
 *.exe
 *.dll
 *.so

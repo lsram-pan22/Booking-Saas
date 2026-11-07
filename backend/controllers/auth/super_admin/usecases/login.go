@@ -49,7 +49,7 @@ func (u *LoginUsecase) Login(
 	}
 
 	// ตรวจสอบสิทธิ์ Super Admin
-	if user.SystemRole != "super_admin" {
+	if user.SystemRole != utils.RoleSuperAdmin {
 		return nil, ErrInvalidCredentials
 	}
 

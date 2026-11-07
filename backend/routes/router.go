@@ -47,7 +47,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	})
 
 	// Feature Routes
-	AuthRoutes(api, utils.DB, cfg)
+	SuperAdminRoutes(api, utils.DB, cfg)
 
 	return router
 }

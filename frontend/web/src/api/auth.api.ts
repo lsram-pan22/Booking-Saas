@@ -11,7 +11,7 @@ export async function loginSuperAdmin(
   body: LoginRequest
 ): Promise<LoginResponse> {
   const response = await fetch(
-    `${API_URL}/api/auth/super-admin/login`,
+    `${API_URL}/api/super-admin/login`,
     {
       method: "POST",
       headers: {

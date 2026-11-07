@@ -8,6 +8,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	RoleSuperAdmin = "super_admin"
+	RoleOwner      = "owner"
+	RoleStaff      = "staff"
+)
+
 type JWTClaims struct {
 	UserID int64  `json:"user_id"`
 	Email  string `json:"email"`
