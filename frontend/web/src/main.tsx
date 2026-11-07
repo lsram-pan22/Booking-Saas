@@ -1,22 +1,25 @@
-import React from "react"
-import ReactDOM from "react-dom/client"
-import { ConfigProvider } from "antd"
-import App from "./App"
-import "antd/dist/reset.css"
-import "./i18n";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { App as AntdApp, ConfigProvider } from "antd";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(
+  document.getElementById("root")!
+).render(
   <React.StrictMode>
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: "#6750E8",
-          borderRadius: 10,
-          fontFamily: "Inter, sans-serif"
-        }
-      }}
-    >
-      <App />
-    </ConfigProvider>
+    <BrowserRouter>
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: "#7F867B",
+          },
+        }}
+      >
+        <AntdApp>
+          <App />
+        </AntdApp>
+      </ConfigProvider>
+    </BrowserRouter>
   </React.StrictMode>
-)
+);
