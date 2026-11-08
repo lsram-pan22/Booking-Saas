@@ -30,8 +30,8 @@ export default function Login() {
             <Typography.Text type="secondary">Booking SaaS สำหรับเจ้าของธุรกิจและทีมงาน</Typography.Text>
           </Flex>
           <Form<TenantLoginRequest> layout="vertical" size="large" onFinish={submit} disabled={loading} requiredMark={false}>
-            <Form.Item name="username" label="Username หรืออีเมล" rules={[{ required: true, whitespace: true, message: "กรุณากรอก Username หรืออีเมล" }]}><Input prefix={<UserOutlined />} autoComplete="username" placeholder="Username หรือ you@example.com" maxLength={254} /></Form.Item>
-            <Form.Item name="password" label="รหัสผ่าน" rules={[{ required: true, message: "กรุณากรอกรหัสผ่าน" }]}><Input.Password prefix={<LockOutlined />} autoComplete="current-password" placeholder="รหัสผ่านของคุณ" /></Form.Item>
+            <Form.Item name="username" label="Username หรือ Email" rules={[{ required: true, whitespace: true, message: "กรุณากรอก Username หรืออีเมล" }]}><Input prefix={<UserOutlined />} autoComplete="username" placeholder="Username หรือ you@example.com" maxLength={254} /></Form.Item>
+            <Form.Item name="password" label="Password" rules={[{ required: true, message: "กรุณากรอกรหัสผ่าน" }]}><Input.Password prefix={<LockOutlined />} autoComplete="current-password" placeholder="รหัสผ่านของคุณ" /></Form.Item>
             <Button type="primary" htmlType="submit" block loading={loading}>เข้าสู่ระบบ</Button>
           </Form>
           <Space style={{ marginTop: 24, width: "100%", justifyContent: "center" }}><Typography.Text type="secondary">ยังไม่มีบัญชี?</Typography.Text><Link to="/tenant/register">สมัครสมาชิก</Link></Space>
