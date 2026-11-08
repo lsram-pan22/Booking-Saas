@@ -12,6 +12,8 @@ import (
 
 func SetupRouter(cfg *config.Config) *gin.Engine {
 	router := gin.Default()
+	// The API listens directly on localhost without a reverse proxy.
+	_ = router.SetTrustedProxies(nil)
 
 	// CORS Middleware
 	router.Use(cors.New(cors.Config{

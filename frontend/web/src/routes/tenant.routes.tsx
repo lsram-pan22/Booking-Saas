@@ -10,8 +10,9 @@ import Settings from "../pages/tenant/settings/Settings";
 import Shop from "../pages/tenant/shops/Shop";
 import OwnerRoute from "../components/layouts/tenant/OwnerRoute";
 import Home from "../pages/tenant/home/Home";
-import ShopDashboard from "../pages/tenant/shops/Dashboard";
+import StaffAccess from "../pages/tenant/home/StaffAccess";
 import Services from "../pages/tenant/services/Services";
+import Bookings from "../pages/tenant/bookings/Bookings";
 
 export const tenantRoutes: RouteObject = {
   path: "/tenant",
@@ -23,10 +24,11 @@ export const tenantRoutes: RouteObject = {
       element: <ProtectedRoute />,
       children: [{ element: <TenantLayout />, children: [
         { path: "home", element: <Home /> },
-        { path: "staff", element: <ShopDashboard /> },
-        { path: "shops/:shopID/dashboard", element: <ShopDashboard /> },
-        { path: "shops/:shopID/services", element: <Services /> },
+        { path: "staff", element: <StaffAccess /> },
+        { path: "shops/:shopID/dashboard", element: <Navigate to="../bookings" relative="path" replace /> },
+        { path: "shops/:shopID/bookings", element: <Bookings /> },
         { element: <OwnerRoute />, children: [
+          { path: "shops/:shopID/services", element: <Services /> },
           { path: "dashboard", element: <Dashboard /> },
           { path: "packages", element: <Packages /> },
           { path: "shops/:shopID", element: <Shop /> },

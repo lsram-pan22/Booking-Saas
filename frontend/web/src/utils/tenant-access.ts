@@ -15,5 +15,5 @@ export function normalizeTenantProfile(profile: TenantProfile): TenantProfile {
 export function getTenantLandingPath(profile: TenantProfile): string {
   if (profile.workspace_role === "owner") return "/tenant/dashboard";
   const shop = profile.tenants.find((item) => item.role === "staff" && item.status === "active");
-  return shop ? `/tenant/shops/${shop.id}/dashboard` : "/tenant/staff";
+  return shop ? `/tenant/shops/${shop.id}/bookings` : "/tenant/staff";
 }

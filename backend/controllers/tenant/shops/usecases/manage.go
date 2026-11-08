@@ -29,6 +29,9 @@ func (u *ManageUsecase) Get(ctx context.Context, userID, shopID string) (models.
 }
 func (u *ManageUsecase) Update(ctx context.Context, userID, shopID string, req models.UpdateShopRequest) (models.Shop, error) {
 	req.Name = strings.TrimSpace(req.Name)
+	if (req.OpeningTime == nil) != (req.ClosingTime == nil) || (req.OpeningTime != nil && !utils.ValidShopHours(*req.OpeningTime, *req.ClosingTime)) {
+		return models.Shop{}, ErrInvalidShop
+	}
 	validType := req.BusinessType == "salon" || req.BusinessType == "spa" || req.BusinessType == "clinic" || req.BusinessType == "fitness" || req.BusinessType == "other"
 	if !utils.ValidUserID(userID) || !utils.ValidUserID(shopID) || req.Name == "" || utf8.RuneCountInString(req.Name) > 150 || !validType || (req.Status != nil && *req.Status != "active" && *req.Status != "inactive") {
 		return models.Shop{}, ErrInvalidShop

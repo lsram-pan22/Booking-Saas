@@ -45,3 +45,24 @@ func TestManageShopPermissions(t *testing.T) {
 		})
 	}
 }
+
+func TestManageShopHours(t *testing.T) {
+	const id = "11111111-1111-4111-8111-111111111111"
+	for _, tc := range []struct {
+		open, close string
+		valid       bool
+	}{{"09:00", "18:00", true}, {"00:00", "24:00", true}, {"18:00", "09:00", false}, {"9:00", "18:00", false}} {
+		repo := &manageStub{shop: models.Shop{Role: "owner", Status: "active"}}
+		req := models.UpdateShopRequest{Name: "Shop", BusinessType: "salon", OpeningTime: &tc.open, ClosingTime: &tc.close}
+		_, err := NewManageUsecase(repo).Update(context.Background(), id, id, req)
+		if (err == nil) != tc.valid || repo.updated != tc.valid {
+			t.Errorf("hours %s–%s: %v", tc.open, tc.close, err)
+		}
+	}
+	open := "09:00"
+	repo := &manageStub{}
+	_, err := NewManageUsecase(repo).Update(context.Background(), id, id, models.UpdateShopRequest{Name: "Shop", BusinessType: "salon", OpeningTime: &open})
+	if !errors.Is(err, ErrInvalidShop) || repo.updated {
+		t.Fatal("partial hours update accepted")
+	}
+}

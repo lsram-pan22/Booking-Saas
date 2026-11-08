@@ -31,14 +31,14 @@ func (r *ServiceRepository) List(ctx context.Context, userID, shopID string) (mo
 		return result, err
 	}
 	defer tx.Rollback(context.Background())
-	err = tx.QueryRow(ctx, `SELECT t.name,t.status,m.role FROM tenants t JOIN tenant_members m ON m.tenant_id=t.id JOIN users u ON u.id=m.user_id WHERE t.id=$1 AND m.user_id=$2 AND u.system_role='user' AND u.status='active' AND m.status='active' AND (m.role='owner' AND t.status IN ('pending','active','inactive') OR m.role='staff' AND t.status='active')`, shopID, userID).Scan(&result.ShopName, &result.ShopStatus, &result.Role)
+	err = tx.QueryRow(ctx, `SELECT t.name,t.status,m.role FROM tenants t JOIN tenant_members m ON m.tenant_id=t.id JOIN users u ON u.id=m.user_id WHERE t.id=$1 AND m.user_id=$2 AND u.system_role='user' AND u.status='active' AND m.status='active' AND m.role='owner' AND t.status IN ('pending','active','inactive')`, shopID, userID).Scan(&result.ShopName, &result.ShopStatus, &result.Role)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return result, ErrNotFound
 	}
 	if err != nil {
 		return result, err
 	}
-	rows, err := tx.Query(ctx, `SELECT `+columns+` FROM services s WHERE s.tenant_id=$1 AND ($2='owner' OR s.status='active') ORDER BY s.created_at,s.id`, shopID, result.Role)
+	rows, err := tx.Query(ctx, `SELECT `+columns+` FROM services s WHERE s.tenant_id=$1 ORDER BY s.created_at,s.id`, shopID)
 	if err != nil {
 		return result, err
 	}

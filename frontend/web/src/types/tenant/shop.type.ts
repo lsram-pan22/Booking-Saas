@@ -14,13 +14,19 @@ export interface CreateShopRequest {
 
 export interface UpdateShopRequest extends CreateShopRequest {
   status: "active" | "inactive";
+  opening_time: string;
+  closing_time: string;
 }
 
 export interface EditShopForm extends CreateShopRequest {
   active: boolean;
+  opening_time: string;
+  closing_time: string;
 }
 
 export interface ShopDetails extends TenantShop {
+  opening_time: string | null;
+  closing_time: string | null;
   business_type: string;
   slug: string;
 }

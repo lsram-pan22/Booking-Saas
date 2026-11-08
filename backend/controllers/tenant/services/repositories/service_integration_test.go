@@ -80,16 +80,14 @@ func TestServiceAccessIntegration(t *testing.T) {
 	if err != nil || len(ownerList.Items) != 2 || ownerList.Role != "owner" {
 		t.Fatalf("owner list: %+v %v", ownerList, err)
 	}
-	staffList, err := repo.List(ctx, staff, first)
-	if err != nil || len(staffList.Items) != 1 || staffList.Items[0].ID != active.ID {
-		t.Fatalf("staff list: %+v %v", staffList, err)
-	}
 	denied := func(err error) {
 		t.Helper()
 		if !errors.Is(err, ErrNotFound) {
 			t.Fatalf("expected access denied, got %v", err)
 		}
 	}
+	_, err = repo.List(ctx, staff, first)
+	denied(err)
 	_, err = repo.Save(ctx, staff, first, "", input)
 	denied(err)
 	_, err = repo.Save(ctx, staff, first, active.ID, input)
@@ -106,10 +104,12 @@ func TestServiceAccessIntegration(t *testing.T) {
 	if err != nil || updated.Name != "Updated" || updated.PriceSatang != 0 {
 		t.Fatalf("update: %+v %v", updated, err)
 	}
-	staffList, err = repo.List(ctx, staff, first)
-	if err != nil || len(staffList.Items) != 2 {
-		t.Fatal("reactivated service not visible", err)
+	ownerList, err = repo.List(ctx, owner, first)
+	if err != nil || len(ownerList.Items) != 2 {
+		t.Fatal("owner cannot list updated services", err)
 	}
+	_, err = repo.List(ctx, staff, first)
+	denied(err)
 	exec(`UPDATE tenants SET status='inactive' WHERE id=$1`, first)
 	_, err = repo.List(ctx, staff, first)
 	denied(err)

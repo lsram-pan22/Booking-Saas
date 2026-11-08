@@ -24,11 +24,10 @@ function ShopServices({ shopID }: ShopServicesProps) {
   const saved = (service: ShopService) => setData(previous => previous ? { ...previous, items: previous.items.some(item => item.id === service.id) ? previous.items.map(item => item.id === service.id ? service : item) : [...previous.items, service] } : previous);
   return <Row gutter={[24, 24]}>
     <Col span={24}><Flex justify="space-between" align="center" gap={16} wrap>
-      <div><Typography.Title level={3} style={{ margin: 0 }}>บริการของร้านค้า</Typography.Title><Typography.Text type="secondary">{data?.shop_name}</Typography.Text></div>
+      <div><Typography.Title level={3} style={{ margin: 0 }}>บริการของร้านค้า</Typography.Title></div>
       {canManage && <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(undefined); setOpen(true); }}>เพิ่มบริการ</Button>}
     </Flex></Col>
     <Col span={24}>{error ? <Alert type="error" showIcon title={error} action={<Button loading={loading} onClick={() => { setLoading(true); setError(""); setRetry(value => value + 1); }}>ลองใหม่</Button>} /> : <Card>
-      {data?.role === "staff" && <Typography.Paragraph type="secondary">แสดงบริการที่เปิดใช้งานของร้านค้า</Typography.Paragraph>}
       <Table<ShopService> rowKey="id" loading={loading} dataSource={data?.items || []} scroll={{ x: 650 }} locale={{ emptyText: "ยังไม่มีบริการ" }} columns={[
         { title: "บริการ", dataIndex: "name", render: (name: string, service) => <><Typography.Text strong>{name}</Typography.Text>{service.description && <Typography.Paragraph type="secondary" ellipsis={{ rows: 2 }} style={{ marginBottom: 0 }}>{service.description}</Typography.Paragraph>}</> },
         { title: "ระยะเวลา", dataIndex: "duration_minutes", render: (value: number) => `${value} นาที`, width: 120 },

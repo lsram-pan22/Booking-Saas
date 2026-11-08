@@ -27,7 +27,7 @@ export default function Dashboard() {
             <Space orientation="vertical" style={{ width: "100%" }}>
               <Tag color={tenant.status === "active" ? "green" : tenant.status === "pending" ? "gold" : "default"}>{shopStatusLabels[tenant.status] || tenant.status}</Tag>
               <Typography.Text type="secondary">{tenant.status === "pending" ? "ร้านค้าอยู่ระหว่างรอเปิดใช้งาน" : tenant.status === "inactive" ? "ร้านค้าปิดใช้งาน เจ้าของร้านเปิดกลับได้ในข้อมูลร้านค้า" : "ร้านค้าพร้อมใช้งาน"}</Typography.Text>
-              <Link to={`/tenant/shops/${tenant.id}`}><Button type="primary">จัดการร้านค้า</Button></Link>
+              <Link to={tenant.status === "active" ? `/tenant/shops/${tenant.id}/bookings` : `/tenant/shops/${tenant.id}`}><Button type="primary">จัดการร้านค้า</Button></Link>
             </Space>
           </Card>
         </Col>)}

@@ -2,15 +2,23 @@ package main
 
 import (
 	"log"
+	"os"
+	"strings"
 
 	"booking-saas/config"
 	"booking-saas/routes"
 	"booking-saas/utils"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	// Load Configuration
 	cfg := config.LoadConfig()
+	mode := strings.TrimSpace(os.Getenv("GIN_MODE"))
+	if mode == "" {
+		mode = gin.ReleaseMode
+	}
+	gin.SetMode(mode)
 
 	// Validate JWT Secret
 	if cfg.JWT.Secret == "" {

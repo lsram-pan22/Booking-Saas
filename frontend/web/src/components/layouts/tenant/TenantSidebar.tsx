@@ -1,8 +1,7 @@
 import { Button, Flex, Menu, Typography } from "antd";
-import { AppstoreOutlined, CreditCardOutlined, DashboardOutlined, SettingOutlined, ShopOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
+import { CalendarOutlined, AppstoreOutlined, CreditCardOutlined, SettingOutlined, ShopOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
 import type { TenantSidebarProps } from "../../../types/tenant/layout.type";
-import { getTenantLandingPath } from "../../../utils/tenant-access";
 
 export default function TenantSidebar({ collapsed = false, onNavigate, onToggle, profile }: TenantSidebarProps) {
   const location = useLocation();
@@ -15,13 +14,13 @@ export default function TenantSidebar({ collapsed = false, onNavigate, onToggle,
       {onToggle && <Button type="text" aria-label={collapsed ? "ขยายเมนู" : "ย่อเมนู"} icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={onToggle} style={{ color: "white", width: 40, height: 40, fontSize: 18 }} />}
     </Flex>
     <Menu theme="dark" mode="inline" inlineCollapsed={collapsed} selectedKeys={[location.pathname]} style={{ background: "#7F867B", borderInlineEnd: 0 }} onClick={({ key }) => { navigate(key); onNavigate?.(); }} items={!profile ? [] : profile.workspace_role === "staff" ? [
-      { key: getTenantLandingPath(profile), label: "Dashboard", icon: <DashboardOutlined /> },
-      ...(staffShop ? [{ key: `/tenant/shops/${staffShop.id}/services`, label: "บริการ", icon: <AppstoreOutlined /> }] : []),
+      ...(staffShop ? [{ key: `/tenant/shops/${staffShop.id}/bookings`, label: "การจอง", icon: <CalendarOutlined /> }] : []),
       { type: "divider" },
       { key: "/tenant/settings", label: "ตั้งค่าบัญชี", icon: <SettingOutlined /> },
     ] : shopMatch ? [
       { key: `/tenant/shops/${shopMatch.params.shopID}`, label: "ข้อมูลร้านค้า", icon: <ShopOutlined /> },
-      { key: `/tenant/shops/${shopMatch.params.shopID}/dashboard`, label: "Dashboard", icon: <DashboardOutlined /> },
+      { type: "divider" },
+      { key: `/tenant/shops/${shopMatch.params.shopID}/bookings`, label: "การจอง", icon: <CalendarOutlined /> },
       { key: `/tenant/shops/${shopMatch.params.shopID}/services`, label: "บริการ", icon: <AppstoreOutlined /> },
     ] : [
       { key: "/tenant/dashboard", label: "ร้านค้าของฉัน", icon: <ShopOutlined /> },

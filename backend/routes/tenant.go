@@ -21,6 +21,7 @@ func TenantRoutes(
 ) {
 	auth := router.Group("/tenant")
 	tenantServiceRoutes(auth, db, cfg)
+	tenantBookingRoutes(auth, db, cfg)
 
 	repo := repositories.NewRegisterRepository(db)
 	usecase := usecases.NewRegisterUsecase(repo)
