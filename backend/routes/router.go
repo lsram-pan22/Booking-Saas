@@ -16,11 +16,12 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	_ = router.SetTrustedProxies(nil)
 
 	// CORS Middleware
+	corsOrigins := cfg.CORSOrigins
+	if len(corsOrigins) == 0 {
+		corsOrigins = []string{"http://localhost:5173", "http://127.0.0.1:5173"}
+	}
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:5173",
-			"http://127.0.0.1:5173",
-		},
+		AllowOrigins: corsOrigins,
 		AllowMethods: []string{
 			"GET",
 			"POST",
