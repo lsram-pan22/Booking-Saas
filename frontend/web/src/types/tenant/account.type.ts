@@ -13,9 +13,10 @@ export interface TenantLoginRequest {
 }
 
 export interface TenantProfile {
+  must_change_password: boolean;
   workspace_role: "owner" | "staff";
   owned_shop_count: number;
-	 subscription: TenantSubscription | null;
+	subscription: TenantSubscription | null;
   user: TenantUser;
   tenants: TenantShop[];
 }

@@ -49,7 +49,7 @@ func (u *LoginUsecase) Login(ctx context.Context, req models.LoginRequest) (mode
 	if err != nil {
 		return models.LoginData{}, err
 	}
-	token, err := utils.GenerateJWT(u.Config.JWT.Secret, u.Config.JWT.ExpiresIn, a.User.ID, a.User.Email, "user")
+	token, err := utils.GenerateJWT(u.Config.JWT.Secret, u.Config.JWT.ExpiresIn, a.User.ID, a.User.Email, "user", a.SessionVersion)
 	if err != nil {
 		return models.LoginData{}, err
 	}

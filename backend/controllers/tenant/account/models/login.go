@@ -20,17 +20,19 @@ type TenantUser struct {
 	Phone      string `json:"phone"`
 }
 type Account struct {
-	User         TenantUser
-	PasswordHash string
-	SystemRole   string
-	Status       string
+	SessionVersion int64
+	User           TenantUser
+	PasswordHash   string
+	SystemRole     string
+	Status         string
 }
 type Profile struct {
-	WorkspaceRole  string        `json:"workspace_role"`
-	OwnedShopCount int           `json:"owned_shop_count"`
-	Subscription   *Subscription `json:"subscription"`
-	User           TenantUser    `json:"user"`
-	Tenants        []Tenant      `json:"tenants"`
+	MustChangePassword bool          `json:"must_change_password"`
+	WorkspaceRole      string        `json:"workspace_role"`
+	OwnedShopCount     int           `json:"owned_shop_count"`
+	Subscription       *Subscription `json:"subscription"`
+	User               TenantUser    `json:"user"`
+	Tenants            []Tenant      `json:"tenants"`
 }
 type LoginData struct {
 	AccessToken string `json:"access_token"`

@@ -16,7 +16,7 @@ export default function Login() {
     try {
       const session = await loginTenant({ username: values.username.trim().toLowerCase(), password: values.password });
       saveAuthSession(session);
-      navigate(getTenantLandingPath(session), { replace: true });
+      navigate(session.must_change_password ? "/tenant/change-password" : getTenantLandingPath(session), { replace: true });
     } catch (error) { message.error(error instanceof Error ? error.message : "เชื่อมต่อระบบไม่สำเร็จ"); }
     finally { setLoading(false); }
   };

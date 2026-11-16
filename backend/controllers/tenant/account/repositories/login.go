@@ -15,7 +15,7 @@ type LoginRepository struct{ DB *pgxpool.Pool }
 func NewLoginRepository(db *pgxpool.Pool) *LoginRepository { return &LoginRepository{DB: db} }
 func (r *LoginRepository) FindByIdentity(ctx context.Context, email string) (models.Account, error) {
 	var a models.Account
-	err := r.DB.QueryRow(ctx, `SELECT id,email,full_name,password_hash,system_role,status FROM users WHERE system_role='user' AND (LOWER(email)=$1 OR LOWER(username)=$1)`, email).Scan(&a.User.ID, &a.User.Email, &a.User.FullName, &a.PasswordHash, &a.SystemRole, &a.Status)
+	err := r.DB.QueryRow(ctx, `SELECT id,email,full_name,password_hash,system_role,status,session_version FROM users WHERE system_role='user' AND (LOWER(email)=$1 OR LOWER(username)=$1)`, email).Scan(&a.User.ID, &a.User.Email, &a.User.FullName, &a.PasswordHash, &a.SystemRole, &a.Status, &a.SessionVersion)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return a, ErrAccountNotFound
 	}
@@ -23,7 +23,7 @@ func (r *LoginRepository) FindByIdentity(ctx context.Context, email string) (mod
 }
 func (r *LoginRepository) Profile(ctx context.Context, id string) (models.Profile, error) {
 	p := models.Profile{Tenants: make([]models.Tenant, 0)}
-	err := r.DB.QueryRow(ctx, `SELECT id,email,full_name,COALESCE(phone,'') FROM users WHERE id=$1 AND status='active' AND system_role='user'`, id).Scan(&p.User.ID, &p.User.Email, &p.User.FullName, &p.User.Phone)
+	err := r.DB.QueryRow(ctx, `SELECT id,email,full_name,COALESCE(phone,''),must_change_password FROM users WHERE id=$1 AND status='active' AND system_role='user'`, id).Scan(&p.User.ID, &p.User.Email, &p.User.FullName, &p.User.Phone, &p.MustChangePassword)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return p, ErrAccountNotFound
 	}

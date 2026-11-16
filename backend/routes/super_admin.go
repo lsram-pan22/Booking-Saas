@@ -8,6 +8,9 @@ import (
 	packageCtrl "booking-saas/controllers/super_admin/packages/ctrls"
 	packageRepo "booking-saas/controllers/super_admin/packages/repositories"
 	packageUsecase "booking-saas/controllers/super_admin/packages/usecases"
+	accountCtrl "booking-saas/controllers/tenant/account/ctrls"
+	accountRepo "booking-saas/controllers/tenant/account/repositories"
+	accountUsecase "booking-saas/controllers/tenant/account/usecases"
 	"booking-saas/middleware"
 	"booking-saas/utils"
 
@@ -33,7 +36,10 @@ func SuperAdminRoutes(
 	auth.POST("/login", superAdminController.Login)
 
 	// Package management requires a verified Super Admin token.
-	admin := auth.Group("", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole(utils.RoleSuperAdmin))
+	admin := auth.Group("", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole(utils.RoleSuperAdmin), middleware.RequireSession(db, false))
+	passwordCtrl := accountCtrl.NewPasswordController(accountUsecase.NewPasswordUsecase(accountRepo.NewPasswordRepository(db)))
+	admin.GET("/users", passwordCtrl.Owners)
+	admin.POST("/users/:userID/password/reset", passwordCtrl.Reset)
 	packageRepository := packageRepo.NewPackageRepository(db)
 	packageService := packageUsecase.NewPackageUsecase(packageRepository)
 	packageController := packageCtrl.NewPackageController(packageService)

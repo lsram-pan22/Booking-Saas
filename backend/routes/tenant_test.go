@@ -21,6 +21,8 @@ func TestTenantEndpointsRegistered(t *testing.T) {
 		{"POST", "/api/v1/tenant/register", 400},
 		{"GET", "/api/v1/tenant/me", 401},
 		{"PATCH", "/api/v1/tenant/me", 401},
+		{"POST", "/api/v1/tenant/password/change", 401},
+		{"POST", "/api/v1/tenant/shops/11111111-1111-4111-8111-111111111111/users/22222222-2222-4222-8222-222222222222/password/reset", 401},
 		{"POST", "/api/v1/tenant/shops", 401},
 		{"GET", "/api/v1/tenant/shops/11111111-1111-4111-8111-111111111111/bookings?date=2026-11-07", 401},
 		{"POST", "/api/v1/tenant/shops/11111111-1111-4111-8111-111111111111/bookings", 401},

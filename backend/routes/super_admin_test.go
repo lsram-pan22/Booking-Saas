@@ -38,6 +38,8 @@ func TestPackageRoutesRejectNonSuperAdmins(t *testing.T) {
 	SuperAdminRoutes(router.Group("/api/v1"), nil, cfg)
 	endpoints := []struct{ method, path string }{
 		{"GET", "/api/v1/super-admin/packages"},
+		{"GET", "/api/v1/super-admin/users"},
+		{"POST", "/api/v1/super-admin/users/22222222-2222-4222-8222-222222222222/password/reset"},
 		{"POST", "/api/v1/super-admin/packages"},
 		{"PUT", "/api/v1/super-admin/packages/2cd5d4ae-871b-46f6-ab6e-b2d87d51c231"},
 	}
@@ -77,7 +79,7 @@ func TestPackageRoutesRejectNonSuperAdmins(t *testing.T) {
 		}
 	}
 
-	// A valid admin reaches request validation (400), rather than authorization denial.
+	// A valid signature still needs a database-backed session check (fail closed).
 	token, err := utils.GenerateJWT(secret, time.Hour, "11111111-1111-4111-8111-111111111111", "admin@example.com", utils.RoleSuperAdmin)
 	if err != nil {
 		t.Fatal(err)
@@ -87,7 +89,7 @@ func TestPackageRoutesRejectNonSuperAdmins(t *testing.T) {
 	req.Header.Set("Authorization", "Bearer "+token)
 	response := httptest.NewRecorder()
 	router.ServeHTTP(response, req)
-	if response.Code != 400 {
-		t.Fatalf("valid admin status = %d, want validation status 400", response.Code)
+	if response.Code != 503 {
+		t.Fatalf("valid admin status = %d, want unavailable database status 503", response.Code)
 	}
 }

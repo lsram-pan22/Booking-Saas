@@ -1,10 +1,16 @@
 import { Alert, Button, Card, Space, Switch, Table, Tag, Typography } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import type { ShopMember, ShopMembersCardProps } from "../../../types/tenant/shop.type";
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import ResetPasswordDrawer from "./ResetPasswordDrawer";
+import { resetStaffPassword } from "../../../api/tenant/password.api";
 
 const statusLabel = (status: string) => ({ active: "เปิดใช้งาน", inactive: "ปิดใช้งาน", suspended: "ระงับ" })[status] || status;
 
 export default function ShopMembersCard({ data, error, canAdd, onAdd, canManage, updatingMemberID, onStatusChange }: ShopMembersCardProps) {
+  const { shopID } = useParams();
+  const [resetting, setResetting] = useState<ShopMember>();
   return <Card title={`ผู้ใช้งาน${data ? ` (${data.active_count}/${data.user_limit ?? "—"})` : ""}`} extra={<Button type="primary" icon={<PlusOutlined />} disabled={!canAdd || !data || data.user_limit === null || data.active_count >= data.user_limit || Boolean(error) || Boolean(updatingMemberID)} onClick={onAdd}>เพิ่มผู้ใช้งาน</Button>}>
     <Space orientation="vertical" size="middle" style={{ width: "100%" }}>
       <Typography.Text type="secondary">นับสมาชิกที่เปิดใช้งาน รวมเจ้าของร้าน</Typography.Text>
@@ -26,8 +32,10 @@ export default function ShopMembersCard({ data, error, canAdd, onAdd, canManage,
             onChange={(active) => onStatusChange(member, active)}
           /> },
           { title: "สถานะบัญชี", dataIndex: "user_status", render: (status: string) => statusLabel(status) },
+          { title: "รหัสผ่าน", key: "password", render: (_, member) => member.role === "staff" ? <Button disabled={!canManage || member.user_status !== "active" || member.status === "suspended" || Boolean(updatingMemberID)} onClick={() => setResetting(member)}>รีเซ็ตรหัสผ่าน</Button> : null },
         ]} />
       </>}
     </Space>
+    {resetting && shopID && <ResetPasswordDrawer name={resetting.full_name} open onClose={() => setResetting(undefined)} onReset={password => resetStaffPassword(shopID, resetting.user_id, password)} />}
   </Card>;
 }
