@@ -59,6 +59,10 @@ func (r *BookingRepository) list(ctx context.Context, userID, shopID string, day
 	if err != nil {
 		return result, err
 	}
+	result.SubscriptionActive, err = utils.ShopSubscriptionActive(ctx, tx, shopID)
+	if err != nil {
+		return result, err
+	}
 	var memberID string
 	if err = tx.QueryRow(ctx, `SELECT t.opening_time,t.closing_time,m.id::text FROM tenants t JOIN tenant_members m ON m.tenant_id=t.id WHERE t.id=$1 AND m.user_id=$2`, shopID, userID).Scan(&result.OpeningTime, &result.ClosingTime, &memberID); err != nil {
 		return result, err
@@ -147,6 +151,9 @@ func (r *BookingRepository) Create(ctx context.Context, userID, shopID string, r
 		return empty, err
 	}
 	defer tx.Rollback(context.Background())
+	if err = utils.RequireShopSubscription(ctx, tx, shopID); err != nil {
+		return empty, err
+	}
 	var serviceName, staffName string
 	var duration int
 	var price int64

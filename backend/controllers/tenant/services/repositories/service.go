@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"booking-saas/controllers/tenant/services/models"
+	"booking-saas/utils"
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5"
@@ -38,6 +39,10 @@ func (r *ServiceRepository) List(ctx context.Context, userID, shopID string) (mo
 	if err != nil {
 		return result, err
 	}
+	result.SubscriptionActive, err = utils.ShopSubscriptionActive(ctx, tx, shopID)
+	if err != nil {
+		return result, err
+	}
 	rows, err := tx.Query(ctx, `SELECT `+columns+` FROM services s WHERE s.tenant_id=$1 ORDER BY s.created_at,s.id`, shopID)
 	if err != nil {
 		return result, err
@@ -59,6 +64,23 @@ func (r *ServiceRepository) List(ctx context.Context, userID, shopID string) (mo
 	return result, nil
 }
 func (r *ServiceRepository) Save(ctx context.Context, userID, shopID, serviceID string, req models.ServiceRequest) (models.Service, error) {
+	tx, err := r.DB.Begin(ctx)
+	if err != nil {
+		return models.Service{}, err
+	}
+	defer tx.Rollback(context.Background())
+	var authorized string
+	err = tx.QueryRow(ctx, `SELECT t.id::text FROM tenants t JOIN tenant_members m ON m.tenant_id=t.id JOIN users u ON u.id=m.user_id
+ WHERE t.id=$1 AND m.user_id=$2 AND m.role='owner' AND m.status='active' AND u.status='active' AND u.system_role='user' AND t.status IN ('active','inactive') FOR SHARE OF t,m,u`, shopID, userID).Scan(&authorized)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return models.Service{}, ErrNotFound
+	}
+	if err != nil {
+		return models.Service{}, err
+	}
+	if err = utils.RequireShopSubscription(ctx, tx, shopID); err != nil {
+		return models.Service{}, err
+	}
 	args := []interface{}{shopID, userID, req.Name, req.Description, req.DurationMinutes, req.PriceSatang, req.Status}
 	// Authorization is part of each write, not just a check in the UI.
 	query := `INSERT INTO services AS s (tenant_id,name,description,duration_minutes,price_satang,status)
@@ -71,5 +93,12 @@ func (r *ServiceRepository) Save(ctx context.Context, userID, shopID, serviceID 
   WHERE s.id=$8 AND s.tenant_id=$1 AND t.id=s.tenant_id AND m.tenant_id=t.id AND m.user_id=$2 AND u.id=m.user_id
   AND m.role='owner' AND m.status='active' AND u.status='active' AND u.system_role='user' AND t.status IN ('active','inactive') RETURNING ` + columns
 	}
-	return scan(r.DB.QueryRow(ctx, query, args...))
+	service, err := scan(tx.QueryRow(ctx, query, args...))
+	if err != nil {
+		return models.Service{}, err
+	}
+	if err = tx.Commit(ctx); err != nil {
+		return models.Service{}, err
+	}
+	return service, nil
 }

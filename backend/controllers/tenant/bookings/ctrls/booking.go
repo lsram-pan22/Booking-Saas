@@ -5,6 +5,7 @@ import (
 	"booking-saas/controllers/tenant/bookings/repositories"
 	"booking-saas/controllers/tenant/bookings/usecases"
 	"booking-saas/middleware"
+	"booking-saas/utils"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -77,6 +78,10 @@ func (ctrl *BookingController) SetStatus(c *gin.Context) {
 	c.JSON(200, gin.H{"success": true, "data": data})
 }
 func respondError(c *gin.Context, err error) {
+	if errors.Is(err, utils.ErrSubscriptionRequired) {
+		c.JSON(403, gin.H{"success": false, "code": "SUBSCRIPTION_REQUIRED", "message": "แพ็กเกจของร้านหมดอายุหรือยังไม่พร้อมใช้งาน ดูข้อมูลและเปลี่ยนสถานะนัดเดิมได้ แต่ยังสร้างหรือแก้ไขนัดไม่ได้"})
+		return
+	}
 	status, message := 500, "ไม่สามารถดำเนินการกับการจองได้ในขณะนี้"
 	switch {
 	case errors.Is(err, repositories.ErrInvalidSchedule):

@@ -130,7 +130,53 @@ while excluding the booking being edited. A moved start must be in the future
 within two years. Scheduling and service changes are stored with before/after
 values in the existing edit history transaction. The provider remains assigned.
 
-## Checks
+## Subscription expiry permissions
+
+Booking creation and all booking edits (including the legacy customer-edit route)
+require a currently active subscription belonging to an active owner of the shop.
+The staff member's personal subscription cannot grant rights to that shop.
+Missing, expired, inactive, and not-yet-started subscriptions block these writes.
+Service creation and edits use the same rule. Checks run inside each write's
+transaction and lock the eligible subscription until the write commits.
+
+Existing bookings and services remain readable. Confirming, completing and
+cancelling existing bookings remain available with the existing assignment and
+shop-status checks. Subscription expiry does not grant new role permissions.
+Account management, password resets and disabling staff remain available;
+adding shops/staff and reactivating staff still require an active subscription.
+Booking/service lists return `subscription_active` for the shop owner's plan,
+so both staff and owner screens can explain the restriction and disable edits.
+Denied writes return HTTP 403 with `code: SUBSCRIPTION_REQUIRED`, preserving login.
+Renewing the subscription restores writes without changing shop/member statuses.
+No new database migration is required for these expiry checks.
+
+The existing opt-in PostgreSQL booking/service integration tests also cover
+expiry, owner-vs-staff entitlements, existing status actions, and renewal.
+
+## Password recovery
+
+Apply `backend/migrations/019_password_reset.sql` before starting the updated API.
+Owners reset a staff account from the shop member list. Super Admin resets an
+owner account from User Management (search returns up to 100 active owners).
+The administrator chooses a temporary password and communicates it directly to
+the user; the system does not send email. Passwords require at least 12 characters
+and at most 72 UTF-8 bytes. Existing accounts keep their passwords.
+
+A reset increments the account's session version and requires a personal password
+on next login. Every protected API checks the current version against PostgreSQL,
+so previously issued tokens are rejected on their next request. A temporary-password
+session can only read its profile and change its password; it cannot manage bookings
+or accounts. Changing the password increments the version again and requires login.
+Reset/change and their audit entry commit together. Audit records contain no passwords.
+Owners cannot reset other owners or staff accounts with memberships in other shops.
+Accounts with an owner subscription are recovered through Super Admin.
+
+Run `PASSWORD_RESET_DB_TEST=1 go test ./controllers/tenant/account/repositories`
+from `backend` to opt into PostgreSQL reset/access/audit integration checks. On
+PowerShell, set `$env:PASSWORD_RESET_DB_TEST='1'` before running `go test`.
+The check creates and removes a unique schema containing synthetic accounts.
+
+## Validation
 
 Run `go test ./...` from `backend`, and `npm run build`, `npm run lint` from
 `frontend/web`.

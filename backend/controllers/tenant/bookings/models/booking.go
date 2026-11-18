@@ -44,12 +44,13 @@ type StaffOption struct {
 	Role string `json:"role"`
 }
 type BookingList struct {
-	OpeningTime *string         `json:"opening_time"`
-	ClosingTime *string         `json:"closing_time"`
-	Role        string          `json:"role"`
-	ShopName    string          `json:"shop_name"`
-	ShopStatus  string          `json:"shop_status"`
-	Items       []Booking       `json:"items"`
-	Services    []ServiceOption `json:"services"`
-	Staff       []StaffOption   `json:"staff"`
+	SubscriptionActive bool            `json:"subscription_active"`
+	OpeningTime        *string         `json:"opening_time"`
+	ClosingTime        *string         `json:"closing_time"`
+	Role               string          `json:"role"`
+	ShopName           string          `json:"shop_name"`
+	ShopStatus         string          `json:"shop_status"`
+	Items              []Booking       `json:"items"`
+	Services           []ServiceOption `json:"services"`
+	Staff              []StaffOption   `json:"staff"`
 }

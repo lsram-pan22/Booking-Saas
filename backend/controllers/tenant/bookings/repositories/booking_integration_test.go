@@ -66,6 +66,7 @@ func TestBookingIntegration(t *testing.T) {
 	for _, table := range []string{"users", "tenants", "tenant_members", "services", "bookings", "booking_status_history", "booking_edit_history"} {
 		exec("CREATE TABLE " + table + " (LIKE public." + table + " INCLUDING ALL)")
 	}
+	exec(`CREATE TABLE subscriptions(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),user_id UUID NOT NULL,status TEXT NOT NULL DEFAULT 'active',starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),ends_at TIMESTAMPTZ)`)
 	newUser := func(name string) string {
 		t.Helper()
 		var id string
@@ -75,6 +76,7 @@ func TestBookingIntegration(t *testing.T) {
 		return id
 	}
 	owner, staff, other := newUser("owner"), newUser("staff"), newUser("other")
+	exec(`INSERT INTO subscriptions(user_id) VALUES($1),($2),($3)`, owner, staff, other)
 	newShop := func(slug string) string {
 		t.Helper()
 		var id string
@@ -374,6 +376,7 @@ func TestBookingIntegration(t *testing.T) {
 		t.Fatal("seventh calendar day missing")
 	}
 	testBookingReschedule(t, ctx, pool, repo, owner, staff, other, first, serviceID, staffID, otherServiceID)
+	testBookingSubscription(t, ctx, pool, repo, owner, staff, first, serviceID, staffID, day.AddDate(0, 0, 20).Add(10*time.Hour))
 	exec(`UPDATE services SET status='inactive' WHERE id=$1`, serviceID)
 	_, err = repo.Create(ctx, owner, first, req)
 	expect(err, ErrUnavailable)

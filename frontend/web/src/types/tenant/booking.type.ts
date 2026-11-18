@@ -31,6 +31,7 @@ export interface BookingStaff {
   role: "owner" | "staff";
 }
 export interface BookingList {
+  subscription_active: boolean;
   opening_time: string | null;
   closing_time: string | null;
   role: "owner" | "staff";

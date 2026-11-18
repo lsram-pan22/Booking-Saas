@@ -23,6 +23,9 @@ func (r *BookingRepository) Update(ctx context.Context, userID, shopID, bookingI
 		return empty, err
 	}
 	defer tx.Rollback(context.Background())
+	if err = utils.RequireShopSubscription(ctx, tx, shopID); err != nil {
+		return empty, err
+	}
 	before, err := lockManageableBooking(ctx, tx, userID, shopID, bookingID)
 	if err != nil {
 		return empty, err
