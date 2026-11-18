@@ -9,6 +9,7 @@ import (
 	shopRepo "booking-saas/controllers/tenant/shops/repositories"
 	shopUsecase "booking-saas/controllers/tenant/shops/usecases"
 	"booking-saas/middleware"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,6 +21,8 @@ func TenantRoutes(
 	cfg *config.Config,
 ) {
 	auth := router.Group("/tenant")
+	passwordLimit := middleware.NewRateLimiter(10, 15*time.Minute)
+	auth.POST("/logout", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, true, true), ctrls.LogoutAllSessions(db))
 	tenantServiceRoutes(auth, db, cfg)
 	tenantBookingRoutes(auth, db, cfg)
 
@@ -37,8 +40,8 @@ func TenantRoutes(
 	auth.GET("/subscription", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), planCtrl.Overview)
 	auth.PUT("/subscription/selection", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), planCtrl.Select)
 	passwordCtrl := ctrls.NewPasswordController(usecases.NewPasswordUsecase(repositories.NewPasswordRepository(db)))
-	auth.POST("/password/change", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, true), passwordCtrl.Change)
-	auth.POST("/shops/:shopID/users/:userID/password/reset", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), passwordCtrl.Reset)
+	auth.POST("/password/change", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, true), passwordLimit.ByActor(), passwordCtrl.Change)
+	auth.POST("/shops/:shopID/users/:userID/password/reset", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), passwordLimit.ByActor(), passwordCtrl.Reset)
 	settingsRepo := repositories.NewSettingsRepository(db)
 	settingsUsecase := usecases.NewSettingsUsecase(settingsRepo)
 	settingsCtrl := ctrls.NewSettingsController(settingsUsecase)
@@ -49,15 +52,15 @@ func TenantRoutes(
 	auth.POST("/shops", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), shopsController.Create)
 	manageUsecase := shopUsecase.NewManageUsecase(shopsRepository)
 	manageController := shopCtrl.NewManageController(manageUsecase)
-	auth.GET("/shops/:shopID", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), manageController.Get)
-	auth.PATCH("/shops/:shopID", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), manageController.Update)
+	auth.GET("/shops/:shopID", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), manageController.Get)
+	auth.PATCH("/shops/:shopID", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), manageController.Update)
 	membersUsecase := shopUsecase.NewMembersUsecase(shopsRepository)
 	membersController := shopCtrl.NewMembersController(membersUsecase)
-	auth.GET("/shops/:shopID/members", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), membersController.List)
+	auth.GET("/shops/:shopID/members", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), membersController.List)
 	addMemberUsecase := shopUsecase.NewAddMemberUsecase(shopsRepository)
 	addMemberController := shopCtrl.NewAddMemberController(addMemberUsecase)
-	auth.POST("/shops/:shopID/members", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), addMemberController.Add)
+	auth.POST("/shops/:shopID/members", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), addMemberController.Add)
 	memberStatusUsecase := shopUsecase.NewMemberStatusUsecase(shopsRepository)
 	memberStatusController := shopCtrl.NewMemberStatusController(memberStatusUsecase)
-	auth.PATCH("/shops/:shopID/members/:memberID", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), memberStatusController.Set)
+	auth.PATCH("/shops/:shopID/members/:memberID", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), memberStatusController.Set)
 }

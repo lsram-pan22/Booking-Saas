@@ -24,7 +24,7 @@ func (ctrl *MemberStatusController) Set(c *gin.Context) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1024)
 	var req models.MemberStatusRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		c.JSON(400, gin.H{"success": false, "message": "สถานะสมาชิกไม่ถูกต้อง"})
 		return
 	}

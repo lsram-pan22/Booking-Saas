@@ -40,7 +40,7 @@ func passwordResult(c *gin.Context, err error) {
 func (ctrl *PasswordController) Reset(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 4096)
 	var req models.ResetPasswordRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		c.JSON(400, gin.H{"success": false, "message": "ข้อมูลไม่ถูกต้อง"})
 		return
 	}
@@ -49,7 +49,7 @@ func (ctrl *PasswordController) Reset(c *gin.Context) {
 func (ctrl *PasswordController) Change(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 4096)
 	var req models.ChangePasswordRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		c.JSON(400, gin.H{"success": false, "message": "ข้อมูลไม่ถูกต้อง"})
 		return
 	}

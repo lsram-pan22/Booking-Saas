@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"booking-saas/config"
+	"booking-saas/middleware"
 	"booking-saas/utils"
 
 	"github.com/gin-contrib/cors"
@@ -11,16 +12,18 @@ import (
 )
 
 func SetupRouter(cfg *config.Config) *gin.Engine {
-	router := gin.Default()
-	// The API listens directly on localhost without a reverse proxy.
-	_ = router.SetTrustedProxies(nil)
+	router := gin.New()
+	// Client-IP limits trust forwarding headers only from configured peers.
+	_ = router.SetTrustedProxies(cfg.TrustedProxies)
+	router.Use(middleware.SecurityHeaders(), middleware.SecurityAudit(), middleware.SafeRecovery(), middleware.LimitRequestBody())
+	origins := cfg.CORSOrigins
+	if len(origins) == 0 {
+		origins = []string{"http://localhost:5173", "http://127.0.0.1:5173"}
+	}
 
 	// CORS Middleware
 	router.Use(cors.New(cors.Config{
-		AllowOrigins: []string{
-			"http://localhost:5173",
-			"http://127.0.0.1:5173",
-		},
+		AllowOrigins: origins,
 		AllowMethods: []string{
 			"GET",
 			"POST",
@@ -39,6 +42,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	}))
 
 	api := router.Group("/api/v1")
+	api.Use(middleware.AuthenticationLimits())
 
 	// Health Check
 	api.GET("/health", func(c *gin.Context) {

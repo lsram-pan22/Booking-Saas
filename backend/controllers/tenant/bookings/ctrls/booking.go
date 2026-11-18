@@ -47,7 +47,7 @@ func (ctrl *BookingController) Create(c *gin.Context) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.CreateBookingRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		respondError(c, usecases.ErrInvalid)
 		return
 	}
@@ -66,7 +66,7 @@ func (ctrl *BookingController) SetStatus(c *gin.Context) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.StatusRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		respondError(c, usecases.ErrInvalid)
 		return
 	}

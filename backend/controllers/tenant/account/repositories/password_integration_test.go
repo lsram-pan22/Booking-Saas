@@ -3,12 +3,15 @@ package repositories
 import (
 	"booking-saas/config"
 	"booking-saas/controllers/tenant/account/models"
+	"booking-saas/middleware"
 	"booking-saas/utils"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -64,6 +67,11 @@ func TestPasswordResetIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	exec(string(migration))
+	expiryMigration, err := os.ReadFile("../../../../migrations/021_temporary_password_expiry.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	exec(string(expiryMigration))
 	hash, err := utils.HashPassword("original-password")
 	if err != nil {
 		t.Fatal(err)
@@ -88,9 +96,12 @@ func TestPasswordResetIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	actor := models.PasswordActor{ID: owner, Role: "user"}
+	if err = repo.Reset(ctx, actor, shop, staff, temp, "incorrect-owner-password"); !errors.Is(err, models.ErrCurrentPassword) {
+		t.Fatal("actor password confirmation bypassed", err)
+	}
 	denied := func(actor models.PasswordActor, shop, target string) {
 		t.Helper()
-		if err := repo.Reset(ctx, actor, shop, target, temp); !errors.Is(err, models.ErrPasswordDenied) {
+		if err := repo.Reset(ctx, actor, shop, target, temp, "original-password"); !errors.Is(err, models.ErrPasswordDenied) {
 			t.Fatalf("unauthorized reset: %v", err)
 		}
 	}
@@ -102,7 +113,7 @@ func TestPasswordResetIntegration(t *testing.T) {
 	exec(`INSERT INTO tenant_members VALUES(gen_random_uuid(),$1,'staff','active')`, staff)
 	denied(actor, shop, staff)
 	exec(`DELETE FROM tenant_members WHERE user_id=$1 AND tenant_id<>$2::uuid`, staff, shop)
-	if err = repo.Reset(ctx, actor, shop, staff, temp); err != nil {
+	if err = repo.Reset(ctx, actor, shop, staff, temp, "original-password"); err != nil {
 		t.Fatal(err)
 	}
 	var version int64
@@ -139,7 +150,7 @@ func TestPasswordResetIntegration(t *testing.T) {
 	if err = repo.Change(ctx, staffActor, "new-personal-password", "temporary-password", temp); !errors.Is(err, models.ErrPasswordDenied) {
 		t.Fatal("change token was reusable")
 	}
-	if err = repo.Reset(ctx, models.PasswordActor{ID: admin, Role: "super_admin"}, "", owner, temp); err != nil {
+	if err = repo.Reset(ctx, models.PasswordActor{ID: admin, Role: "super_admin"}, "", owner, temp, "original-password"); err != nil {
 		t.Fatal(err)
 	}
 	// An owner who must change their own password cannot reset staff.
@@ -148,4 +159,42 @@ func TestPasswordResetIntegration(t *testing.T) {
 	if err = pool.QueryRow(ctx, `SELECT count(*) FROM password_events`).Scan(&events); err != nil || events != 3 {
 		t.Fatalf("audit count %d: %v", events, err)
 	}
+	exec(`UPDATE users SET password_reset_expires_at=NOW()-INTERVAL '1 second' WHERE id=$1`, owner)
+	if err = repo.Change(ctx, models.PasswordActor{ID: owner, Role: "user", Version: 1}, "temporary-password", "new-personal-password", next); !errors.Is(err, models.ErrPasswordDenied) {
+		t.Fatal("expired temporary password accepted", err)
+	}
+	// Exercise actual session/membership queries against the isolated tables.
+	const secret = "integration-session-revocation-secret"
+	oldToken, err := utils.GenerateJWT(secret, time.Hour, staff, "staff@example.test", "user", 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	revoked, err := utils.RevokeAccountSessions(ctx, pool, &utils.JWTClaims{UserID: staff, Role: "user", SessionVersion: 2})
+	if err != nil || !revoked {
+		t.Fatal("logout failed", err)
+	}
+	newToken, err := utils.GenerateJWT(secret, time.Hour, staff, "staff@example.test", "user", 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	router := gin.New()
+	router.Use(middleware.RequireJWT(secret), middleware.RequireSession(pool, false, true))
+	router.GET("/shops/:shopID", middleware.RequireShopAccess(pool, false), func(c *gin.Context) { c.Status(200) })
+	router.GET("/manage/:shopID", middleware.RequireShopAccess(pool, true), func(c *gin.Context) { c.Status(200) })
+	request := func(token, path string, want int) {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", path, nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		router.ServeHTTP(rec, req)
+		if rec.Code != want {
+			t.Fatalf("%s status %d want %d", path, rec.Code, want)
+		}
+	}
+	request(oldToken, "/shops/"+shop, 401)
+	request(newToken, "/shops/"+shop, 200)
+	request(newToken, "/shops/99999999-9999-4999-8999-999999999999", 404)
+	request(newToken, "/manage/"+shop, 404)
+	exec(`UPDATE tenant_members SET status='inactive' WHERE user_id=$1`, staff)
+	request(newToken, "/shops/"+shop, 404)
 }

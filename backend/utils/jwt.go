@@ -17,6 +17,19 @@ const (
 
 var userIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
+var dummyPasswordHash = func() string {
+	hash, err := bcrypt.GenerateFromPassword([]byte("not-a-user-password"), bcrypt.DefaultCost)
+	if err != nil {
+		panic(err)
+	}
+	return string(hash)
+}()
+
+func CheckUnknownAccountPassword(password string) { _ = CheckPassword(password, dummyPasswordHash) }
+func TemporaryPasswordValid(mustChange bool, expires *time.Time, now time.Time) bool {
+	return !mustChange || (expires != nil && now.Before(*expires))
+}
+
 func ValidUserID(id string) bool {
 	return id != "00000000-0000-0000-0000-000000000000" && userIDPattern.MatchString(id)
 }

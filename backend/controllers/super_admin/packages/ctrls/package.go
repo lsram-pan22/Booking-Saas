@@ -4,6 +4,7 @@ import (
 	"booking-saas/controllers/super_admin/packages/models"
 	"booking-saas/controllers/super_admin/packages/repositories"
 	"booking-saas/controllers/super_admin/packages/usecases"
+	"booking-saas/middleware"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -37,7 +38,7 @@ func (ctrl *PackageController) Update(c *gin.Context) {
 func (ctrl *PackageController) save(c *gin.Context, id string) {
 	var p models.Package
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
-	if err := c.ShouldBindJSON(&p); err != nil {
+	if err := middleware.DecodeJSON(c, &p); err != nil {
 		c.JSON(400, gin.H{"success": false, "message": "Invalid package data"})
 		return
 	}

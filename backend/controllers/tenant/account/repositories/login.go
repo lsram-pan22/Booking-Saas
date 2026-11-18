@@ -16,7 +16,7 @@ type LoginRepository struct{ DB *pgxpool.Pool }
 func NewLoginRepository(db *pgxpool.Pool) *LoginRepository { return &LoginRepository{DB: db} }
 func (r *LoginRepository) FindByIdentity(ctx context.Context, email string) (models.Account, error) {
 	var a models.Account
-	err := r.DB.QueryRow(ctx, `SELECT id,email,full_name,password_hash,system_role,status,session_version FROM users WHERE system_role='user' AND (LOWER(email)=$1 OR LOWER(username)=$1)`, email).Scan(&a.User.ID, &a.User.Email, &a.User.FullName, &a.PasswordHash, &a.SystemRole, &a.Status, &a.SessionVersion)
+	err := r.DB.QueryRow(ctx, `SELECT id,email,full_name,password_hash,system_role,status,session_version,must_change_password,password_reset_expires_at FROM users WHERE system_role='user' AND (LOWER(email)=$1 OR LOWER(username)=$1)`, email).Scan(&a.User.ID, &a.User.Email, &a.User.FullName, &a.PasswordHash, &a.SystemRole, &a.Status, &a.SessionVersion, &a.MustChangePassword, &a.ResetExpiresAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return a, ErrAccountNotFound
 	}

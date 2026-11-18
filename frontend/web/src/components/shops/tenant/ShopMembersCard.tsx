@@ -37,6 +37,6 @@ export default function ShopMembersCard({ data, error, canAdd, onAdd, canManage,
         ]} />
       </>}
     </Space>
-    {resetting && shopID && <ResetPasswordDrawer name={resetting.full_name} open onClose={() => setResetting(undefined)} onReset={password => resetStaffPassword(shopID, resetting.user_id, password)} />}
+    {resetting && shopID && <ResetPasswordDrawer name={resetting.full_name} open onClose={() => setResetting(undefined)} onReset={(password, currentPassword) => resetStaffPassword(shopID, resetting.user_id, password, currentPassword)} />}
   </Card>;
 }

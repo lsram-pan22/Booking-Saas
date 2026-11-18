@@ -25,6 +25,6 @@ export default function Users() {
         { title: "จัดการ", key: "actions", render: (_, owner) => <Button disabled={Boolean(error)} onClick={() => setResetting(owner)}>รีเซ็ตรหัสผ่าน</Button> },
       ]} />
     </Space>
-    {resetting && <ResetPasswordDrawer name={resetting.full_name} open onClose={() => setResetting(undefined)} onReset={password => resetOwnerPassword(resetting.id, password)} />}
+    {resetting && <ResetPasswordDrawer name={resetting.full_name} open onClose={() => setResetting(undefined)} onReset={(password, currentPassword) => resetOwnerPassword(resetting.id, password, currentPassword)} />}
   </Card>;
 }

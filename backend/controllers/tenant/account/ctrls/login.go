@@ -4,6 +4,7 @@ import (
 	"booking-saas/controllers/tenant/account/models"
 	"booking-saas/controllers/tenant/account/usecases"
 	"booking-saas/middleware"
+	"booking-saas/utils"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -18,7 +19,7 @@ func NewLoginController(u *usecases.LoginUsecase) *LoginController {
 func (ctrl *LoginController) Login(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.LoginRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		c.JSON(400, gin.H{"success": false, "message": "กรุณากรอกอีเมลและรหัสผ่านให้ถูกต้อง"})
 		return
 	}
@@ -27,6 +28,7 @@ func (ctrl *LoginController) Login(c *gin.Context) {
 		loginError(c, err)
 		return
 	}
+	c.Set(middleware.ClaimsKey, &utils.JWTClaims{UserID: data.User.ID, Role: "user"})
 	c.JSON(200, gin.H{"success": true, "data": data})
 }
 func (ctrl *LoginController) Me(c *gin.Context) {

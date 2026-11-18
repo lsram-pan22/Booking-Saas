@@ -40,7 +40,7 @@ func (ctrl *ServiceController) save(c *gin.Context, serviceID string) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.ServiceRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		c.JSON(400, gin.H{"success": false, "message": "กรุณากรอกข้อมูลบริการให้ครบถ้วน"})
 		return
 	}

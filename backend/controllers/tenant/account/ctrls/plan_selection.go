@@ -38,7 +38,7 @@ func (ctrl *PlanController) Select(c *gin.Context) {
 	claims, _ := middleware.AuthClaims(c)
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1048576)
 	var input models.PlanSelection
-	if c.ShouldBindJSON(&input) != nil {
+	if middleware.DecodeJSON(c, &input) != nil {
 		c.JSON(400, gin.H{"success": false, "message": "ข้อมูลไม่ถูกต้อง"})
 		return
 	}

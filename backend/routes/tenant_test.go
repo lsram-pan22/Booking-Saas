@@ -18,6 +18,7 @@ func TestTenantEndpointsRegistered(t *testing.T) {
 		status int
 	}{
 		{"POST", "/api/v1/tenant/login", 400},
+		{"POST", "/api/v1/tenant/logout", 401},
 		{"POST", "/api/v1/tenant/register", 400},
 		{"GET", "/api/v1/tenant/me", 401},
 		{"PATCH", "/api/v1/tenant/me", 401},

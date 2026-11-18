@@ -67,3 +67,16 @@ func TestTenantLogin(t *testing.T) {
 		})
 	}
 }
+
+func TestExpiredTemporaryPasswordCannotLogin(t *testing.T) {
+	hash, err := utils.HashPassword("temporary-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	past := time.Now().Add(-time.Second)
+	repo := &loginStub{account: models.Account{User: models.TenantUser{ID: "11111111-1111-4111-8111-111111111111"}, PasswordHash: hash, Status: "active", SystemRole: "user", MustChangePassword: true, ResetExpiresAt: &past}}
+	cfg := &config.Config{JWT: config.JWTConfig{Secret: "test-secret", ExpiresIn: time.Hour}}
+	if _, err := NewLoginUsecase(repo, cfg).Login(context.Background(), models.LoginRequest{Username: "staff", Password: "temporary-password"}); !errors.Is(err, ErrInvalidCredentials) {
+		t.Fatal("expired temporary password logged in", err)
+	}
+}

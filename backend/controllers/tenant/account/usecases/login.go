@@ -32,17 +32,19 @@ func (u *LoginUsecase) Login(ctx context.Context, req models.LoginRequest) (mode
 	if identity == "" {
 		identity = strings.ToLower(strings.TrimSpace(req.Email))
 	}
-	if identity == "" || len(identity) > 254 {
+	if identity == "" || len(identity) > 254 || len(req.Password) == 0 || len(req.Password) > 72 {
 		return models.LoginData{}, ErrInvalidCredentials
 	}
 	a, err := u.Repo.FindByIdentity(ctx, identity)
 	if errors.Is(err, repositories.ErrAccountNotFound) {
+		utils.CheckUnknownAccountPassword(req.Password)
 		return models.LoginData{}, ErrInvalidCredentials
 	}
 	if err != nil {
 		return models.LoginData{}, err
 	}
-	if a.Status != "active" || a.SystemRole != "user" || !utils.CheckPassword(req.Password, a.PasswordHash) {
+	passwordMatches := utils.CheckPassword(req.Password, a.PasswordHash)
+	if a.Status != "active" || a.SystemRole != "user" || !passwordMatches || !utils.TemporaryPasswordValid(a.MustChangePassword, a.ResetExpiresAt, time.Now()) {
 		return models.LoginData{}, ErrInvalidCredentials
 	}
 	p, err := u.Profile(ctx, a.User.ID)

@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
@@ -21,11 +23,13 @@ type TenantUser struct {
 	Phone      string `json:"phone"`
 }
 type Account struct {
-	SessionVersion int64
-	User           TenantUser
-	PasswordHash   string
-	SystemRole     string
-	Status         string
+	MustChangePassword bool
+	ResetExpiresAt     *time.Time
+	SessionVersion     int64
+	User               TenantUser
+	PasswordHash       string
+	SystemRole         string
+	Status             string
 }
 type Profile struct {
 	EnabledShopCount   int           `json:"enabled_shop_count"`

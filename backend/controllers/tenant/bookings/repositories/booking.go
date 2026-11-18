@@ -34,9 +34,13 @@ func scan(row pgx.Row) (models.Booking, error) {
 }
 func authorize(ctx context.Context, tx pgx.Tx, userID, shopID string, write bool) (string, string, string, error) {
 	var name, status, role string
-	err := tx.QueryRow(ctx, `SELECT t.name,t.status,m.role FROM tenants t JOIN tenant_members m ON m.tenant_id=t.id JOIN users u ON u.id=m.user_id
+	query := `SELECT t.name,t.status,m.role FROM tenants t JOIN tenant_members m ON m.tenant_id=t.id JOIN users u ON u.id=m.user_id
  WHERE t.id=$1 AND m.user_id=$2 AND m.status='active' AND m.role IN ('owner','staff') AND u.status='active' AND u.system_role='user'
- AND (t.status='active' OR (NOT $3 AND m.role='owner' AND t.status='inactive'))`, shopID, userID, write).Scan(&name, &status, &role)
+ AND (t.status='active' OR (NOT $3 AND m.role='owner' AND t.status='inactive'))`
+	if write {
+		query += ` FOR SHARE OF m,u`
+	}
+	err := tx.QueryRow(ctx, query, shopID, userID, write).Scan(&name, &status, &role)
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = ErrNotFound
 	}

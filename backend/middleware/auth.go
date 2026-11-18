@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"booking-saas/utils"
 
@@ -16,7 +17,7 @@ const ClaimsKey = "auth_claims"
 func RequireJWT(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		parts := strings.Fields(c.GetHeader("Authorization"))
-		if secret == "" || len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+		if secret == "" || len(c.Request.Header.Values("Authorization")) != 1 || len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || len(parts[1]) > 4096 {
 			unauthorized(c)
 			return
 		}
@@ -26,7 +27,7 @@ func RequireJWT(secret string) gin.HandlerFunc {
 			return []byte(secret), nil
 		}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
 			jwt.WithIssuer("booking-saas"), jwt.WithExpirationRequired(), jwt.WithIssuedAt())
-		if err != nil || !token.Valid || !utils.ValidUserID(claims.UserID) {
+		if err != nil || !token.Valid || !utils.ValidUserID(claims.UserID) || claims.SessionVersion < 0 || claims.IssuedAt == nil || claims.ExpiresAt == nil || !claims.ExpiresAt.After(claims.IssuedAt.Time) || claims.ExpiresAt.Sub(claims.IssuedAt.Time) > 12*time.Hour {
 			unauthorized(c)
 			return
 		}

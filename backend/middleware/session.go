@@ -12,10 +12,11 @@ import (
 )
 
 type SessionState struct {
-	Version    int64
-	Role       string
-	Status     string
-	MustChange bool
+	ResetExpiresAt *time.Time
+	Version        int64
+	Role           string
+	Status         string
+	MustChange     bool
 }
 
 // SessionPolicy is kept separate from storage so revocation and restricted
@@ -24,13 +25,16 @@ func SessionPolicy(state SessionState, version int64, role string, allowChange b
 	if state.Status != "active" || state.Role != role || state.Version != version {
 		return 401
 	}
+	if !utils.TemporaryPasswordValid(state.MustChange, state.ResetExpiresAt, time.Now()) {
+		return 401
+	}
 	if state.MustChange && !allowChange {
 		return 403
 	}
 	return 0
 }
 
-func RequireSession(db *pgxpool.Pool, allowChange bool) gin.HandlerFunc {
+func RequireSession(db *pgxpool.Pool, allowChange bool, skipReconcile ...bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims, ok := AuthClaims(c)
 		if !ok {
@@ -44,7 +48,7 @@ func RequireSession(db *pgxpool.Pool, allowChange bool) gin.HandlerFunc {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
 		var state SessionState
-		err := db.QueryRow(ctx, `SELECT session_version,system_role,status,must_change_password FROM users WHERE id=$1`, claims.UserID).Scan(&state.Version, &state.Role, &state.Status, &state.MustChange)
+		err := db.QueryRow(ctx, `SELECT session_version,system_role,status,must_change_password,password_reset_expires_at FROM users WHERE id=$1`, claims.UserID).Scan(&state.Version, &state.Role, &state.Status, &state.MustChange, &state.ResetExpiresAt)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				unauthorized(c)
@@ -62,7 +66,7 @@ func RequireSession(db *pgxpool.Pool, allowChange bool) gin.HandlerFunc {
 			c.AbortWithStatusJSON(403, gin.H{"success": false, "code": "PASSWORD_CHANGE_REQUIRED", "message": "กรุณาเปลี่ยนรหัสผ่านชั่วคราวก่อนใช้งาน"})
 			return
 		}
-		if claims.Role == "user" && !state.MustChange {
+		if claims.Role == "user" && !state.MustChange && !(len(skipReconcile) > 0 && skipReconcile[0]) {
 			if err = utils.EnsureUserSubscriptions(ctx, db, claims.UserID); err != nil {
 				log.Printf("Subscription reconciliation failed: %v", err)
 				c.AbortWithStatusJSON(503, gin.H{"success": false, "message": "ไม่สามารถปรับแพ็กเกจปัจจุบันได้ กรุณาติดต่อผู้ดูแลระบบ"})

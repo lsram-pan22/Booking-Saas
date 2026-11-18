@@ -2,7 +2,7 @@ import { useState } from "react";
 import { App, Button, Card, Form, Input, Space, Typography } from "antd";
 import { useNavigate } from "react-router-dom";
 import { changePassword } from "../../../api/tenant/password.api";
-import { clearAuthSession } from "../../../utils/auth";
+import { clearAuthSession, logout } from "../../../utils/auth";
 import type { ChangePasswordForm } from "../../../types/shared/password.type";
 
 export default function ChangePassword() {
@@ -26,7 +26,7 @@ export default function ChangePassword() {
         <Form.Item name="confirm_password" label="ยืนยันรหัสผ่านใหม่" dependencies={["password"]} rules={[{ required: true }, ({ getFieldValue }) => ({ validator: (_, value) => value === getFieldValue("password") ? Promise.resolve() : Promise.reject(new Error("รหัสผ่านไม่ตรงกัน")) })]}><Input.Password autoComplete="new-password" /></Form.Item>
         <Button type="primary" block htmlType="submit" loading={saving}>บันทึกรหัสผ่านใหม่</Button>
       </Form>
-      <Button disabled={saving} onClick={() => { clearAuthSession(); navigate("/tenant/login", { replace: true }); }}>ออกจากระบบ</Button>
+      <Button disabled={saving} onClick={() => { setSaving(true); void logout().then(() => navigate("/tenant/login", { replace: true })).catch(error => { message.error(error instanceof Error ? error.message : "ออกจากระบบไม่สำเร็จ"); setSaving(false); }); }}>ออกจากระบบทุกอุปกรณ์</Button>
     </Space>
   </Card></main>;
 }

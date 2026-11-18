@@ -17,7 +17,7 @@ async function request<T>(path: string, body?: object): Promise<T> {
   if (!response.ok || !result.success) throw new Error(result.message || "ดำเนินการไม่สำเร็จ");
   return result.data as T;
 }
-export const resetStaffPassword = (shopID: string, userID: string, password: string) => request<void>(`/tenant/shops/${shopID}/users/${userID}/password/reset`, { password });
-export const resetOwnerPassword = (userID: string, password: string) => request<void>(`/super-admin/users/${userID}/password/reset`, { password });
+export const resetStaffPassword = (shopID: string, userID: string, password: string, current_password: string) => request<void>(`/tenant/shops/${shopID}/users/${userID}/password/reset`, { password, current_password });
+export const resetOwnerPassword = (userID: string, password: string, current_password: string) => request<void>(`/super-admin/users/${userID}/password/reset`, { password, current_password });
 export const listResettableOwners = (search = "") => request<ResettableOwner[]>(`/super-admin/users?search=${encodeURIComponent(search)}`);
 export const changePassword = (current_password: string, new_password: string) => request<void>("/tenant/password/change", { current_password, new_password });

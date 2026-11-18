@@ -37,7 +37,7 @@ func (ctrl *ManageController) Update(c *gin.Context) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.UpdateShopRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		c.JSON(400, gin.H{"success": false, "message": "กรุณากรอกข้อมูลร้านค้าให้ถูกต้อง"})
 		return
 	}

@@ -13,6 +13,7 @@ import (
 	accountUsecase "booking-saas/controllers/tenant/account/usecases"
 	"booking-saas/middleware"
 	"booking-saas/utils"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,6 +25,8 @@ func SuperAdminRoutes(
 	cfg *config.Config,
 ) {
 	auth := router.Group("/super-admin")
+	passwordLimit := middleware.NewRateLimiter(10, 15*time.Minute)
+	auth.POST("/logout", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole(utils.RoleSuperAdmin), middleware.RequireSession(db, true, true), accountCtrl.LogoutAllSessions(db))
 
 	// Super Admin
 	superAdminRepository := superAdminRepo.NewUserRepository(db)
@@ -39,7 +42,7 @@ func SuperAdminRoutes(
 	admin := auth.Group("", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole(utils.RoleSuperAdmin), middleware.RequireSession(db, false))
 	passwordCtrl := accountCtrl.NewPasswordController(accountUsecase.NewPasswordUsecase(accountRepo.NewPasswordRepository(db)))
 	admin.GET("/users", passwordCtrl.Owners)
-	admin.POST("/users/:userID/password/reset", passwordCtrl.Reset)
+	admin.POST("/users/:userID/password/reset", passwordLimit.ByActor(), passwordCtrl.Reset)
 	packageRepository := packageRepo.NewPackageRepository(db)
 	packageService := packageUsecase.NewPackageUsecase(packageRepository)
 	packageController := packageCtrl.NewPackageController(packageService)

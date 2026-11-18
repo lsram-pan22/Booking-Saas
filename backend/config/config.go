@@ -10,10 +10,12 @@ import (
 )
 
 type Config struct {
-	BasePath   string
-	AppPort    string
-	PostgreSQL PostgreSQLConfig
-	JWT        JWTConfig
+	CORSOrigins    []string
+	TrustedProxies []string
+	BasePath       string
+	AppPort        string
+	PostgreSQL     PostgreSQLConfig
+	JWT            JWTConfig
 }
 
 type BaseDB struct {
@@ -55,7 +57,9 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		BasePath: ResolveAppBaseFromExe(),
+		CORSOrigins:    optionalList(getEnvOrDefault("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")),
+		TrustedProxies: optionalList(os.Getenv("TRUSTED_PROXIES")),
+		BasePath:       ResolveAppBaseFromExe(),
 
 		AppPort: getEnvOrDefault("APP_PORT", "8080"),
 

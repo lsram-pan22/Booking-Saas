@@ -38,6 +38,7 @@ func TestPackageRoutesRejectNonSuperAdmins(t *testing.T) {
 	SuperAdminRoutes(router.Group("/api/v1"), nil, cfg)
 	endpoints := []struct{ method, path string }{
 		{"GET", "/api/v1/super-admin/packages"},
+		{"POST", "/api/v1/super-admin/logout"},
 		{"GET", "/api/v1/super-admin/users"},
 		{"POST", "/api/v1/super-admin/users/22222222-2222-4222-8222-222222222222/password/reset"},
 		{"POST", "/api/v1/super-admin/packages"},

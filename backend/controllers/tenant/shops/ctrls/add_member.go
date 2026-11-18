@@ -24,7 +24,7 @@ func (ctrl *AddMemberController) Add(c *gin.Context) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.AddMemberRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		c.JSON(400, gin.H{"success": false, "message": "กรุณากรอกข้อมูลผู้ใช้งานให้ครบถ้วน"})
 		return
 	}

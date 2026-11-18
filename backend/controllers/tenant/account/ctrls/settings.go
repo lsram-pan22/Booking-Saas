@@ -24,7 +24,7 @@ func (ctrl *SettingsController) Update(c *gin.Context) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.UpdateProfileRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		c.JSON(400, gin.H{"success": false, "message": "ข้อมูลไม่ถูกต้อง"})
 		return
 	}

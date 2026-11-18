@@ -204,6 +204,12 @@ The check creates and removes a unique schema containing synthetic accounts.
 
 ## Validation
 
+See `SECURITY.md` for the access matrix, security controls, database checks and
+remaining production work. Apply `backend/migrations/021_temporary_password_expiry.sql`
+for the 24-hour temporary-password deadline. Password resets now also require
+`current_password` from the owner/admin performing the reset. Logout revokes
+all devices on the server instead of only clearing browser storage.
+
 Run `go test ./...` from `backend`, and `npm run build`, `npm run lint` from
 `frontend/web`.
 

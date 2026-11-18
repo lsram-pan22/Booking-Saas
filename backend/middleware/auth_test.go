@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -49,6 +50,9 @@ func TestSuperAdminAuthorization(t *testing.T) {
 		{name: "wrong algorithm", method: jwt.SigningMethodHS384, status: 401},
 		{name: "expired", mutate: func(c *utils.JWTClaims) { c.ExpiresAt = jwt.NewNumericDate(now.Add(-time.Hour)) }, status: 401},
 		{name: "missing expiry", mutate: func(c *utils.JWTClaims) { c.ExpiresAt = nil }, status: 401},
+		{name: "missing issued time", mutate: func(c *utils.JWTClaims) { c.IssuedAt = nil }, status: 401},
+		{name: "excessive lifetime", mutate: func(c *utils.JWTClaims) { c.ExpiresAt = jwt.NewNumericDate(now.Add(24 * time.Hour)) }, status: 401},
+		{name: "negative session version", mutate: func(c *utils.JWTClaims) { c.SessionVersion = -1 }, status: 401},
 		{name: "wrong issuer", mutate: func(c *utils.JWTClaims) { c.Issuer = "other" }, status: 401},
 		{name: "future issued", mutate: func(c *utils.JWTClaims) { c.IssuedAt = jwt.NewNumericDate(now.Add(time.Hour)) }, status: 401},
 		{name: "invalid user", mutate: func(c *utils.JWTClaims) { c.UserID = "invalid" }, status: 401},
@@ -152,6 +156,29 @@ func TestSharedRoleAuthorization(t *testing.T) {
 					t.Fatalf("status = %d, want %d", response.Code, want)
 				}
 			})
+		}
+	}
+}
+
+func TestDuplicateAndOversizedAuthorizationAreRejected(t *testing.T) {
+	token, err := utils.GenerateJWT("authorization-test-secret", time.Hour, "11111111-1111-4111-8111-111111111111", "test@example.test", "user")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, duplicate := range []bool{false, true} {
+		router := gin.New()
+		router.GET("/", RequireJWT("authorization-test-secret"), func(c *gin.Context) { c.Status(200) })
+		req := httptest.NewRequest("GET", "/", nil)
+		if duplicate {
+			req.Header.Add("Authorization", "Bearer "+token)
+			req.Header.Add("Authorization", "Bearer "+token)
+		} else {
+			req.Header.Set("Authorization", "Bearer "+strings.Repeat("x", 5000))
+		}
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		if rec.Code != 401 {
+			t.Fatalf("invalid authorization accepted: %d", rec.Code)
 		}
 	}
 }
