@@ -28,7 +28,7 @@ function ShopServices({ shopID }: ShopServicesProps) {
       <div><Typography.Title level={3} style={{ margin: 0 }}>บริการของร้านค้า</Typography.Title></div>
       {canManage && <Button type="primary" icon={<PlusOutlined />} disabled={!canEdit} onClick={() => { setEditing(undefined); setOpen(true); }}>เพิ่มบริการ</Button>}
     </Flex></Col>
-    {data?.subscription_active === false && <Col span={24}><Alert type="warning" showIcon title="แพ็กเกจของร้านหมดอายุหรือยังไม่พร้อมใช้งาน" description="ดูบริการเดิมได้ แต่ยังเพิ่มหรือแก้ไขบริการไม่ได้ กรุณาตรวจสอบแพ็กเกจของร้าน" /></Col>}
+    {data?.subscription_active === false && <Col span={24}><Alert type="warning" showIcon title="ร้านหรือพนักงานอยู่นอกสิทธิ์แพ็กเกจ หรือกำลังรอเลือกสิทธิ์ Free" description="ดูบริการเดิมได้ แต่ยังเพิ่มหรือแก้ไขบริการไม่ได้ กรุณาตรวจสอบแพ็กเกจของร้าน" /></Col>}
     <Col span={24}>{error ? <Alert type="error" showIcon title={error} action={<Button loading={loading} onClick={() => { setLoading(true); setError(""); setRetry(value => value + 1); }}>ลองใหม่</Button>} /> : <Card>
       <Table<ShopService> rowKey="id" loading={loading} dataSource={data?.items || []} scroll={{ x: 650 }} locale={{ emptyText: "ยังไม่มีบริการ" }} columns={[
         { title: "บริการ", dataIndex: "name", render: (name: string, service) => <><Typography.Text strong>{name}</Typography.Text>{service.description && <Typography.Paragraph type="secondary" ellipsis={{ rows: 2 }} style={{ marginBottom: 0 }}>{service.description}</Typography.Paragraph>}</> },

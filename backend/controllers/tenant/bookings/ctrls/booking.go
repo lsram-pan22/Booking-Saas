@@ -79,7 +79,7 @@ func (ctrl *BookingController) SetStatus(c *gin.Context) {
 }
 func respondError(c *gin.Context, err error) {
 	if errors.Is(err, utils.ErrSubscriptionRequired) {
-		c.JSON(403, gin.H{"success": false, "code": "SUBSCRIPTION_REQUIRED", "message": "แพ็กเกจของร้านหมดอายุหรือยังไม่พร้อมใช้งาน ดูข้อมูลและเปลี่ยนสถานะนัดเดิมได้ แต่ยังสร้างหรือแก้ไขนัดไม่ได้"})
+		c.JSON(403, gin.H{"success": false, "code": "SUBSCRIPTION_REQUIRED", "message": "ร้านหรือพนักงานอยู่นอกสิทธิ์แพ็กเกจ หรือกำลังรอเลือกสิทธิ์ Free ดูข้อมูลและเปลี่ยนสถานะนัดเดิมได้ แต่ยังสร้างหรือแก้ไขนัดไม่ได้"})
 		return
 	}
 	status, message := 500, "ไม่สามารถดำเนินการกับการจองได้ในขณะนี้"

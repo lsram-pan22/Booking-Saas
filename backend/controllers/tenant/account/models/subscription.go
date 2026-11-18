@@ -3,6 +3,7 @@ package models
 import "time"
 
 type Subscription struct {
+	SelectionRequired    bool       `json:"selection_required"`
 	ShopLimit            int        `json:"shop_limit"`
 	ID                   string     `json:"id"`
 	PackageID            string     `json:"package_id"`

@@ -59,7 +59,7 @@ func (r *BookingRepository) list(ctx context.Context, userID, shopID string, day
 	if err != nil {
 		return result, err
 	}
-	result.SubscriptionActive, err = utils.ShopSubscriptionActive(ctx, tx, shopID)
+	result.SubscriptionActive, err = utils.ShopSubscriptionActive(ctx, tx, shopID, userID)
 	if err != nil {
 		return result, err
 	}
@@ -102,7 +102,7 @@ func (r *BookingRepository) list(ctx context.Context, userID, shopID string, day
 	if err != nil {
 		return result, err
 	}
-	rows, err = tx.Query(ctx, `SELECT m.id::text,u.full_name,m.role FROM tenant_members m JOIN users u ON u.id=m.user_id WHERE m.tenant_id=$1 AND m.status='active' AND m.role IN ('owner','staff') AND u.status='active' AND u.system_role='user' AND ($2='owner' OR m.user_id=$3) ORDER BY u.full_name,m.id`, shopID, result.Role, userID)
+	rows, err = tx.Query(ctx, `SELECT m.id::text,u.full_name,m.role FROM tenant_members m JOIN users u ON u.id=m.user_id WHERE m.tenant_id=$1 AND m.status='active' AND m.plan_enabled AND m.role IN ('owner','staff') AND u.status='active' AND u.system_role='user' AND ($2='owner' OR m.user_id=$3) ORDER BY u.full_name,m.id`, shopID, result.Role, userID)
 	if err != nil {
 		return result, err
 	}
@@ -151,7 +151,7 @@ func (r *BookingRepository) Create(ctx context.Context, userID, shopID string, r
 		return empty, err
 	}
 	defer tx.Rollback(context.Background())
-	if err = utils.RequireShopSubscription(ctx, tx, shopID); err != nil {
+	if err = utils.RequireShopSubscription(ctx, tx, shopID, userID); err != nil {
 		return empty, err
 	}
 	var serviceName, staffName string
@@ -164,7 +164,7 @@ func (r *BookingRepository) Create(ctx context.Context, userID, shopID string, r
 	if err != nil {
 		return empty, err
 	}
-	err = tx.QueryRow(ctx, `SELECT u.full_name FROM tenant_members m JOIN users u ON u.id=m.user_id WHERE m.id=$1 AND m.tenant_id=$2 AND m.role IN ('owner','staff') AND m.status='active' AND u.status='active' AND u.system_role='user'
+	err = tx.QueryRow(ctx, `SELECT u.full_name FROM tenant_members m JOIN users u ON u.id=m.user_id WHERE m.id=$1 AND m.tenant_id=$2 AND m.role IN ('owner','staff') AND m.status='active' AND m.plan_enabled AND u.status='active' AND u.system_role='user'
  AND (m.user_id=$3 OR EXISTS(SELECT 1 FROM tenant_members actor WHERE actor.tenant_id=m.tenant_id AND actor.user_id=$3 AND actor.role='owner' AND actor.status='active')) FOR SHARE OF m,u`, req.StaffMemberID, shopID, userID).Scan(&staffName)
 	if errors.Is(err, pgx.ErrNoRows) {
 		err = ErrUnavailable

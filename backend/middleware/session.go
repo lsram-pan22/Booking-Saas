@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"booking-saas/utils"
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -60,6 +61,13 @@ func RequireSession(db *pgxpool.Pool, allowChange bool) gin.HandlerFunc {
 		case 403:
 			c.AbortWithStatusJSON(403, gin.H{"success": false, "code": "PASSWORD_CHANGE_REQUIRED", "message": "กรุณาเปลี่ยนรหัสผ่านชั่วคราวก่อนใช้งาน"})
 			return
+		}
+		if claims.Role == "user" && !state.MustChange {
+			if err = utils.EnsureUserSubscriptions(ctx, db, claims.UserID); err != nil {
+				log.Printf("Subscription reconciliation failed: %v", err)
+				c.AbortWithStatusJSON(503, gin.H{"success": false, "message": "ไม่สามารถปรับแพ็กเกจปัจจุบันได้ กรุณาติดต่อผู้ดูแลระบบ"})
+				return
+			}
 		}
 		c.Next()
 	}

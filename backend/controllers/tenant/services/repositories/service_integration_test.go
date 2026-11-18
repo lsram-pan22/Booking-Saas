@@ -45,7 +45,7 @@ func TestServiceAccessIntegration(t *testing.T) {
 	for _, table := range []string{"users", "tenants", "tenant_members", "services"} {
 		exec("CREATE TEMP TABLE " + table + " (LIKE public." + table + " INCLUDING ALL)")
 	}
-	exec(`CREATE TEMP TABLE subscriptions(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),user_id UUID NOT NULL,status TEXT NOT NULL DEFAULT 'active',starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),ends_at TIMESTAMPTZ)`)
+	exec(`CREATE TEMP TABLE subscriptions(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),user_id UUID NOT NULL,status TEXT NOT NULL DEFAULT 'active',starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),ends_at TIMESTAMPTZ,selection_required BOOLEAN NOT NULL DEFAULT FALSE)`)
 	user := func(name string) string {
 		t.Helper()
 		var id string

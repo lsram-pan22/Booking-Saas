@@ -66,7 +66,7 @@ func TestBookingIntegration(t *testing.T) {
 	for _, table := range []string{"users", "tenants", "tenant_members", "services", "bookings", "booking_status_history", "booking_edit_history"} {
 		exec("CREATE TABLE " + table + " (LIKE public." + table + " INCLUDING ALL)")
 	}
-	exec(`CREATE TABLE subscriptions(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),user_id UUID NOT NULL,status TEXT NOT NULL DEFAULT 'active',starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),ends_at TIMESTAMPTZ)`)
+	exec(`CREATE TABLE subscriptions(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),user_id UUID NOT NULL,status TEXT NOT NULL DEFAULT 'active',starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),ends_at TIMESTAMPTZ,selection_required BOOLEAN NOT NULL DEFAULT FALSE)`)
 	newUser := func(name string) string {
 		t.Helper()
 		var id string

@@ -32,6 +32,7 @@ export default function ShopMembersCard({ data, error, canAdd, onAdd, canManage,
             onChange={(active) => onStatusChange(member, active)}
           /> },
           { title: "สถานะบัญชี", dataIndex: "user_status", render: (status: string) => statusLabel(status) },
+          { title: "สิทธิ์แพ็กเกจ", dataIndex: "plan_enabled", render: (enabled: boolean) => <Tag color={enabled ? "green" : "orange"}>{enabled ? "อยู่ในสิทธิ์" : "นอกสิทธิ์ — เลือกในหน้าแพ็กเกจ"}</Tag> },
           { title: "รหัสผ่าน", key: "password", render: (_, member) => member.role === "staff" ? <Button disabled={!canManage || member.user_status !== "active" || member.status === "suspended" || Boolean(updatingMemberID)} onClick={() => setResetting(member)}>รีเซ็ตรหัสผ่าน</Button> : null },
         ]} />
       </>}

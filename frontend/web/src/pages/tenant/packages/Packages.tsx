@@ -1,6 +1,7 @@
 import { Alert, Button, Card, Col, Descriptions, Empty, Row, Space, Spin, Tag, Typography } from "antd";
 import { useOutletContext } from "react-router-dom";
 import type { TenantLayoutContext } from "../../../types/tenant/layout.type";
+import PlanScope from "../../../components/shops/tenant/PlanScope";
 
 export default function Packages() {
   const { profile, error } = useOutletContext<TenantLayoutContext>();
@@ -28,5 +29,6 @@ export default function Packages() {
         { key: "api", label: "API / Webhook", children: subscription.api_webhook ? "ใช้งานได้" : "ไม่รวมในแพ็กเกจ" },
       ]} /></Card></Col>
     </Row>}
+    {subscription && <PlanScope key={subscription.id} subscription={subscription} />}
   </Space>;
 }

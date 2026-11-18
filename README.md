@@ -132,6 +132,32 @@ values in the existing edit history transaction. The provider remains assigned.
 
 ## Subscription expiry permissions
 
+Apply `backend/migrations/020_subscription_free_fallback.sql` before starting
+this version. Paid subscription expiry is reconciled on login/profile reads and
+authenticated tenant requests, including staff requests. The old paid record is
+marked `expired` and retained; a new active Free snapshot has no expiry date.
+The Free catalog package must be active, zero-priced, and have positive quotas.
+If it is unavailable, the expired account retains the restricted read/status
+behavior instead of receiving paid rights or losing access to old data.
+
+Concurrent reconciliation is serialized per owner and a unique partial index
+allows only one active subscription per account. The migration replaces an old
+single-row-per-user unique constraint/index, if present, to support history.
+It does not discard historical rows; conflicting pre-existing active rows cause
+the migration to fail atomically and must be reviewed before retrying.
+
+When existing shops or active users exceed Free quotas, `selection_required`
+blocks new work until the owner selects shops and staff on the Packages page.
+Separate `plan_enabled` flags retain shop/member statuses and all booking history.
+The owner counts toward each shop's user quota. Unselected shops/staff can still
+read and manage existing booking statuses with their original permissions.
+The selected scope is enforced by booking/service writes, provider choices,
+shop creation and staff activation; selection updates commit atomically.
+`GET /api/v1/tenant/subscription` shows history and eligible scope options;
+`PUT /api/v1/tenant/subscription/selection` accepts `shop_ids` and `member_ids`.
+Set `SUBSCRIPTION_FALLBACK_DB_TEST=1` to run the isolated PostgreSQL fallback,
+migration, concurrency, ownership and scope-selection integration check.
+
 Booking creation and all booking edits (including the legacy customer-edit route)
 require a currently active subscription belonging to an active owner of the shop.
 The staff member's personal subscription cannot grant rights to that shop.
@@ -147,8 +173,8 @@ adding shops/staff and reactivating staff still require an active subscription.
 Booking/service lists return `subscription_active` for the shop owner's plan,
 so both staff and owner screens can explain the restriction and disable edits.
 Denied writes return HTTP 403 with `code: SUBSCRIPTION_REQUIRED`, preserving login.
-Renewing the subscription restores writes without changing shop/member statuses.
-No new database migration is required for these expiry checks.
+Free fallback and scope selection restore eligible writes without changing
+shop/member statuses. This version requires migration 020 described above.
 
 The existing opt-in PostgreSQL booking/service integration tests also cover
 expiry, owner-vs-staff entitlements, existing status actions, and renewal.

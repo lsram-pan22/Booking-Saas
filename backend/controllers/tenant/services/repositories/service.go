@@ -39,7 +39,7 @@ func (r *ServiceRepository) List(ctx context.Context, userID, shopID string) (mo
 	if err != nil {
 		return result, err
 	}
-	result.SubscriptionActive, err = utils.ShopSubscriptionActive(ctx, tx, shopID)
+	result.SubscriptionActive, err = utils.ShopSubscriptionActive(ctx, tx, shopID, userID)
 	if err != nil {
 		return result, err
 	}
@@ -78,7 +78,7 @@ func (r *ServiceRepository) Save(ctx context.Context, userID, shopID, serviceID 
 	if err != nil {
 		return models.Service{}, err
 	}
-	if err = utils.RequireShopSubscription(ctx, tx, shopID); err != nil {
+	if err = utils.RequireShopSubscription(ctx, tx, shopID, userID); err != nil {
 		return models.Service{}, err
 	}
 	args := []interface{}{shopID, userID, req.Name, req.Description, req.DurationMinutes, req.PriceSatang, req.Status}

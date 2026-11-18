@@ -57,7 +57,7 @@ func (ctrl *ServiceController) save(c *gin.Context, serviceID string) {
 }
 func respondError(c *gin.Context, err error) {
 	if errors.Is(err, utils.ErrSubscriptionRequired) {
-		c.JSON(403, gin.H{"success": false, "code": "SUBSCRIPTION_REQUIRED", "message": "แพ็กเกจของร้านหมดอายุหรือยังไม่พร้อมใช้งาน ดูบริการเดิมได้ แต่ยังเพิ่มหรือแก้ไขบริการไม่ได้"})
+		c.JSON(403, gin.H{"success": false, "code": "SUBSCRIPTION_REQUIRED", "message": "ร้านหรือพนักงานอยู่นอกสิทธิ์แพ็กเกจ หรือกำลังรอเลือกสิทธิ์ Free ดูบริการเดิมได้ แต่ยังเพิ่มหรือแก้ไขบริการไม่ได้"})
 		return
 	}
 	status, message := 500, "ไม่สามารถดำเนินการกับบริการได้ในขณะนี้"

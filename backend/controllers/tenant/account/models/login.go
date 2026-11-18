@@ -6,10 +6,11 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 type Tenant struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Status string `json:"status"`
-	Role   string `json:"role"`
+	PlanEnabled bool   `json:"plan_enabled"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Status      string `json:"status"`
+	Role        string `json:"role"`
 }
 type TenantUser struct {
 	Role       string `json:"role,omitempty"`
@@ -27,6 +28,7 @@ type Account struct {
 	Status         string
 }
 type Profile struct {
+	EnabledShopCount   int           `json:"enabled_shop_count"`
 	MustChangePassword bool          `json:"must_change_password"`
 	WorkspaceRole      string        `json:"workspace_role"`
 	OwnedShopCount     int           `json:"owned_shop_count"`

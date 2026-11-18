@@ -1,4 +1,5 @@
 export interface TenantShop {
+  plan_enabled?: boolean;
   id: string;
   name: string;
   status: string;
@@ -43,6 +44,7 @@ export interface CreateShopDrawerProps {
 }
 
 export interface ShopMember {
+  plan_enabled: boolean;
   username: string;
   id: string;
   user_id: string;
