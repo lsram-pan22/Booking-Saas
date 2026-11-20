@@ -31,7 +31,8 @@ func TestAddShopMemberIntegration(t *testing.T) {
 	poolCfg := utils.DB.Config()
 	poolCfg.MaxConns = 1
 	poolCfg.MinConns = 0
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	// Allow network latency across the complete hosted-database scenario.
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {

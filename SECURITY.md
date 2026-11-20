@@ -1,9 +1,25 @@
 # Security and permission boundaries
 
 This is an application hardening baseline, not a claim of a completed penetration
-test or production security certification. Apply migrations 019, 020 and 021
-before starting the API. Database integration checks are opt-in and have not been
-run as part of the offline checks described below.
+test or production security certification. Use `go run ./cmd/migrate` from
+`backend/` to create a new public schema and apply pending migrations before
+starting the API. Database integration checks remain explicitly opt-in.
+
+On 2026-11-19, all six database integration scenarios passed against the configured
+Supabase PostgreSQL instance: registration/Free subscription, shop members,
+services, bookings (including concurrent creation and rescheduling), password
+reset/session revocation, and expired-plan Free fallback/scope selection. Fixtures
+used temporary tables or isolated schemas. Hosted-database scenarios have longer
+overall deadlines to accommodate network round trips; assertions are unchanged.
+Testing also found and fixed a PostgreSQL parameter-type ambiguity in staff
+activation/deactivation. Browser end-to-end testing and a production security
+review remain separate work.
+
+Migration 022 enables RLS and removes direct table grants for `anon`,
+`authenticated` and `PUBLIC` on application tables, including the migration
+ledger. No browser policies are installed: use the Go API for application data.
+The backend database role must own the tables or have explicit privileges and
+appropriate RLS access. Supabase's `auth` schema is not modified.
 
 ## Access matrix
 
@@ -104,7 +120,8 @@ tests. Fixtures create and remove unique schemas without modifying real accounts
 
 ## Work remaining before production
 
-- Run the database integration suite and an end-to-end role/tenant security review.
+- Repeat the database integration suite for the target deployment and complete
+  a browser end-to-end role/tenant security review.
 - Configure HTTPS, frontend CSP, private database networking, a least-privilege
   database user, managed secrets, encrypted off-machine backups and restore tests.
 - Add MFA, especially for Super Admin, and decide verification/invitation policies

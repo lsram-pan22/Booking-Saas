@@ -1,5 +1,45 @@
 # Booking-Saas
 
+## Create a new database
+
+Configure `backend/.env`, then run from `backend/`:
+
+```powershell
+go run ./cmd/migrate
+```
+
+This explicitly creates the application's tables in `public` and applies all
+pending embedded SQL migrations in one transaction. `001_core_schema.sql`
+consolidates the original core schema, followed by migrations 013 onward.
+`public.schema_migrations` records filenames and SHA-256 checksums; rerunning the
+command skips applied versions and rejects changed migration files. An existing
+schema created outside this runner must be reviewed before adopting this ledger;
+the runner does not silently overwrite or mark existing tables as migrated.
+
+The initial catalog contains only Free: one shop and two users per shop,
+including its owner. No administrator account or default password is created.
+Migration 022 enables RLS and revokes direct table access from Supabase's `anon`
+and `authenticated` roles. Database access is through the Go backend's database
+role, which must own these tables or have appropriate privileges and RLS access.
+These migrations do not alter Supabase's `auth` schema.
+
+The PostgreSQL integration scenarios passed against the configured Supabase
+instance on 2026-11-19, including cross-shop authorization, concurrent booking
+and rescheduling conflicts, member quotas, password/session changes, and Free
+fallback. To run them again from `backend/`:
+
+```powershell
+$env:TENANT_REGISTRATION_DB_TEST = '1'
+$env:SUBSCRIPTION_FALLBACK_DB_TEST = '1'
+$env:PASSWORD_RESET_DB_TEST = '1'
+go test -count=1 -p 1 -timeout 240s ./...
+```
+
+Tests create temporary tables or isolated schemas and clean up after themselves.
+The database role needs permission to create these fixtures. Longer fixture
+deadlines allow for hosted database latency; application request timeouts remain
+unchanged.
+
 ## Project layout
 
 ```text

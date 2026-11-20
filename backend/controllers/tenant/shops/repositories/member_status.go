@@ -69,7 +69,7 @@ func (r *ShopRepository) SetMemberStatus(ctx context.Context, ownerID, shopID, m
 		} else if member.Status == "active" && member.PlanEnabled {
 			result.ActiveCount--
 		}
-		_, err = tx.Exec(ctx, `UPDATE tenant_members SET status=$1,plan_enabled=CASE WHEN $1='active' THEN TRUE ELSE plan_enabled END,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 AND role='staff'`, status, memberID, shopID)
+		_, err = tx.Exec(ctx, `UPDATE tenant_members SET status=$1::varchar,plan_enabled=CASE WHEN $1::varchar='active' THEN TRUE ELSE plan_enabled END,updated_at=NOW() WHERE id=$2 AND tenant_id=$3 AND role='staff'`, status, memberID, shopID)
 		if err != nil {
 			return result, err
 		}

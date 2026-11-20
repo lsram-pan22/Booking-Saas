@@ -31,7 +31,8 @@ func TestBookingIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer utils.CloseDatabase()
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// Includes booking, reschedule, subscription and concurrent-write scenarios.
+	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
 	// A generated, isolated schema allows multiple connections to exercise races.
 	var entropy [12]byte
