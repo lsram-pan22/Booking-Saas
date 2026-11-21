@@ -10,11 +10,10 @@ import (
 )
 
 type Config struct {
-	BasePath    string
-	AppPort     string
-	CORSOrigins []string
-	PostgreSQL  PostgreSQLConfig
-	JWT         JWTConfig
+	BasePath   string
+	AppPort    string
+	PostgreSQL PostgreSQLConfig
+	JWT        JWTConfig
 }
 
 type BaseDB struct {
@@ -45,22 +44,6 @@ func getEnvOrDefault(key, def string) string {
 	return value
 }
 
-func getCORSOrigins() []string {
-	value := strings.TrimSpace(os.Getenv("FRONTEND_ORIGINS"))
-	if value == "" {
-		return []string{"http://localhost:5173", "http://127.0.0.1:5173"}
-	}
-
-	parts := strings.Split(value, ",")
-	origins := make([]string, 0, len(parts))
-	for _, origin := range parts {
-		if origin = strings.TrimSpace(origin); origin != "" {
-			origins = append(origins, origin)
-		}
-	}
-	return origins
-}
-
 func LoadConfig() *Config {
 	// โหลด .env จาก working directory
 	envFile := strings.TrimSpace(os.Getenv("APP_ENV_FILE"))
@@ -74,8 +57,7 @@ func LoadConfig() *Config {
 	return &Config{
 		BasePath: ResolveAppBaseFromExe(),
 
-		AppPort:     getEnvOrDefault("APP_PORT", "8080"),
-		CORSOrigins: getCORSOrigins(),
+		AppPort: getEnvOrDefault("APP_PORT", "8080"),
 
 		PostgreSQL: PostgreSQLConfig{
 			BaseDB: BaseDB{
