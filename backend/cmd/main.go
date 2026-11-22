@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -43,7 +44,7 @@ func main() {
 	router := routes.SetupRouter(cfg)
 
 	// Start HTTP Server
-	address := "127.0.0.1:" + cfg.AppPort
+	address := net.JoinHostPort(cfg.AppHost, cfg.AppPort)
 
 	log.Printf("Booking SaaS API running at http://%s", address)
 

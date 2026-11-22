@@ -13,6 +13,7 @@ type Config struct {
 	CORSOrigins    []string
 	TrustedProxies []string
 	BasePath       string
+	AppHost        string
 	AppPort        string
 	PostgreSQL     PostgreSQLConfig
 	JWT            JWTConfig
@@ -61,7 +62,8 @@ func LoadConfig() *Config {
 		TrustedProxies: optionalList(os.Getenv("TRUSTED_PROXIES")),
 		BasePath:       ResolveAppBaseFromExe(),
 
-		AppPort: getEnvOrDefault("APP_PORT", "8080"),
+		AppHost: getEnvOrDefault("APP_HOST", "127.0.0.1"),
+		AppPort: getEnvOrDefault("PORT", getEnvOrDefault("APP_PORT", "8080")),
 
 		PostgreSQL: PostgreSQLConfig{
 			BaseDB: BaseDB{
