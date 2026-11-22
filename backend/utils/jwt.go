@@ -17,14 +17,28 @@ const (
 
 var userIDPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
+var dummyPasswordHash = func() string {
+	hash, err := bcrypt.GenerateFromPassword([]byte("not-a-user-password"), bcrypt.DefaultCost)
+	if err != nil {
+		panic(err)
+	}
+	return string(hash)
+}()
+
+func CheckUnknownAccountPassword(password string) { _ = CheckPassword(password, dummyPasswordHash) }
+func TemporaryPasswordValid(mustChange bool, expires *time.Time, now time.Time) bool {
+	return !mustChange || (expires != nil && now.Before(*expires))
+}
+
 func ValidUserID(id string) bool {
 	return id != "00000000-0000-0000-0000-000000000000" && userIDPattern.MatchString(id)
 }
 
 type JWTClaims struct {
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
-	Role   string `json:"role"`
+	SessionVersion int64  `json:"session_version"`
+	UserID         string `json:"user_id"`
+	Email          string `json:"email"`
+	Role           string `json:"role"`
 
 	jwt.RegisteredClaims
 }
@@ -58,6 +72,7 @@ func GenerateJWT(
 	userID string,
 	email string,
 	role string,
+	versions ...int64,
 ) (string, error) {
 	if !ValidUserID(userID) {
 		return "", fmt.Errorf("invalid user UUID")
@@ -82,6 +97,9 @@ func GenerateJWT(
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(expiresIn)),
 		},
+	}
+	if len(versions) > 0 {
+		claims.SessionVersion = versions[0]
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

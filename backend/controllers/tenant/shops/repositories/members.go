@@ -24,24 +24,24 @@ func (r *ShopRepository) Members(ctx context.Context, userID, shopID string) (mo
 		return result, ErrShopNotFound
 	}
 	var userLimit int
-	err = tx.QueryRow(ctx, `SELECT user_limit FROM subscriptions WHERE user_id=$1 AND status='active' AND starts_at<=NOW() AND (ends_at IS NULL OR ends_at>NOW())`, userID).Scan(&userLimit)
+	err = tx.QueryRow(ctx, `SELECT user_limit FROM subscriptions WHERE user_id=$1 AND status='active' AND starts_at<=NOW() AND (ends_at IS NULL OR ends_at>NOW()) AND NOT selection_required AND EXISTS(SELECT 1 FROM tenants WHERE id=$2 AND plan_enabled)`, userID, shopID).Scan(&userLimit)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return result, err
 	}
 	if err == nil {
 		result.UserLimit = &userLimit
 	}
-	rows, err := tx.Query(ctx, `SELECT m.id::text,u.id::text,u.full_name,u.email,COALESCE(u.phone,''),m.role,m.status,u.status,u.username FROM tenant_members m JOIN users u ON u.id=m.user_id WHERE m.tenant_id=$1 ORDER BY CASE WHEN m.role='owner' THEN 0 ELSE 1 END,m.created_at,m.id`, shopID)
+	rows, err := tx.Query(ctx, `SELECT m.id::text,u.id::text,u.full_name,u.email,COALESCE(u.phone,''),m.role,m.status,u.status,u.username,m.plan_enabled FROM tenant_members m JOIN users u ON u.id=m.user_id WHERE m.tenant_id=$1 ORDER BY CASE WHEN m.role='owner' THEN 0 ELSE 1 END,m.created_at,m.id`, shopID)
 	if err != nil {
 		return result, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var member models.ShopMember
-		if err = rows.Scan(&member.ID, &member.UserID, &member.FullName, &member.Email, &member.Phone, &member.Role, &member.Status, &member.UserStatus, &member.Username); err != nil {
+		if err = rows.Scan(&member.ID, &member.UserID, &member.FullName, &member.Email, &member.Phone, &member.Role, &member.Status, &member.UserStatus, &member.Username, &member.PlanEnabled); err != nil {
 			return result, err
 		}
-		if member.Status == "active" {
+		if member.Status == "active" && member.PlanEnabled {
 			result.ActiveCount++
 		}
 		result.Members = append(result.Members, member)

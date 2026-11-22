@@ -89,6 +89,16 @@ export function clearAuthSession() {
 }
 
 // Logout
-export function logout() {
-  clearAuthSession();
+export async function logout() {
+  const token = getAccessToken();
+  if (!token) { clearAuthSession(); return; }
+  const account = getCurrentUser()?.role === "super_admin" ? "super-admin" : "tenant";
+  const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetch(`${baseURL}/api/v1/${account}/logout`, { method: "POST", headers: { Authorization: `Bearer ${token}` }, signal: controller.signal });
+    if (!response.ok && response.status !== 401) throw new Error("ยกเลิก session ไม่สำเร็จ กรุณาลองออกจากระบบอีกครั้ง");
+    clearAuthSession();
+  } finally { window.clearTimeout(timer); }
 }

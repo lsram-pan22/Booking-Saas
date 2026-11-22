@@ -40,7 +40,8 @@ func (r *UserRepository) FindByUsername(
             password_hash,
             full_name,
             system_role,
-            status
+            status,
+            session_version
         FROM users
         WHERE LOWER(username) = LOWER($1)
         LIMIT 1
@@ -54,6 +55,7 @@ func (r *UserRepository) FindByUsername(
 		&user.FullName,
 		&user.SystemRole,
 		&user.Status,
+		&user.SessionVersion,
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {

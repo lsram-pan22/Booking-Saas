@@ -42,7 +42,7 @@ func (r *ShopRepository) Create(ctx context.Context, userID string, input models
 	if staffOnly {
 		return shop, ErrOwnerAccountRequired
 	}
-	err = tx.QueryRow(ctx, `SELECT shop_limit FROM subscriptions WHERE user_id=$1 AND status='active' AND starts_at<=NOW() AND (ends_at IS NULL OR ends_at>NOW()) AND user_limit>=1 FOR SHARE`, userID).Scan(&shopLimit)
+	err = tx.QueryRow(ctx, `SELECT shop_limit FROM subscriptions WHERE user_id=$1 AND status='active' AND starts_at<=NOW() AND (ends_at IS NULL OR ends_at>NOW()) AND user_limit>=1 AND NOT selection_required FOR SHARE`, userID).Scan(&shopLimit)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return shop, ErrSubscriptionRequired
 	}

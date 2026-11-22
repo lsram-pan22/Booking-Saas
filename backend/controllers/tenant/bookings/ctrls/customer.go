@@ -16,7 +16,7 @@ func (ctrl *BookingController) UpdateCustomer(c *gin.Context) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.CustomerRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		respondError(c, usecases.ErrInvalidCustomer)
 		return
 	}

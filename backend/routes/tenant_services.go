@@ -14,7 +14,7 @@ func tenantServiceRoutes(tenant *gin.RouterGroup, db *pgxpool.Pool, cfg *config.
 	repo := repositories.NewServiceRepository(db)
 	service := usecases.NewServiceUsecase(repo)
 	ctrl := ctrls.NewServiceController(service)
-	routes := tenant.Group("/shops/:shopID/services", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"))
+	routes := tenant.Group("/shops/:shopID/services", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true))
 	routes.GET("", ctrl.List)
 	routes.POST("", ctrl.Create)
 	routes.PATCH("/:serviceID", ctrl.Update)

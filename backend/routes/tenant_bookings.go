@@ -12,7 +12,7 @@ import (
 
 func tenantBookingRoutes(tenant *gin.RouterGroup, db *pgxpool.Pool, cfg *config.Config) {
 	ctrl := ctrls.NewBookingController(usecases.NewBookingUsecase(repositories.NewBookingRepository(db)))
-	routes := tenant.Group("/shops/:shopID/bookings", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"))
+	routes := tenant.Group("/shops/:shopID/bookings", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, false))
 	routes.GET("", ctrl.List)
 	routes.POST("", ctrl.Create)
 	routes.PATCH("/:bookingID", ctrl.Update)

@@ -36,6 +36,7 @@ function WeeklyBookings({ shopID, date, onDateChange }: BookingListProps) {
   }, [shopID, date, retry]);
   const reload = () => { setLoading(true); setError(""); setRetry(value => value + 1); };
   const canManage = data?.shop_status === "active" && !error && !loading;
+  const canEdit = canManage && data?.subscription_active === true;
   const changeStatus = async (booking: Booking, status: BookingStatus) => {
     if (!canManage || !booking.can_manage || savingID) return;
     setSavingID(booking.id);
@@ -46,7 +47,7 @@ function WeeklyBookings({ shopID, date, onDateChange }: BookingListProps) {
     } catch (e) { message.error(e instanceof Error ? e.message : "เปลี่ยนสถานะไม่สำเร็จ"); reload(); }
     finally { setSavingID(""); }
   };
-  const editButton = (item: Booking) => item.can_manage && canManage && ["pending", "confirmed"].includes(item.status) ? <Button type="text" icon={<EditOutlined />} aria-label="แก้ไขการจอง" title="แก้ไขการจอง" disabled={!!savingID} onClick={() => { setSelectedID(""); setEditingBooking(item); }} /> : null;
+  const editButton = (item: Booking) => item.can_manage && canManage && ["pending", "confirmed"].includes(item.status) ? <Button type="text" icon={<EditOutlined />} aria-label="แก้ไขการจอง" title="แก้ไขการจอง" disabled={!canEdit || !!savingID} onClick={() => { setSelectedID(""); setEditingBooking(item); }} /> : null;
   const actions = (item: Booking) => item.can_manage && canManage ? <Space wrap>
     {item.status === "pending" && <Button disabled={!!savingID} loading={savingID === item.id} onClick={() => void changeStatus(item, "confirmed")}>ยืนยัน</Button>}
     {item.status === "confirmed" && <Popconfirm title="ยืนยันว่าบริการเสร็จสิ้นแล้ว?" onConfirm={() => changeStatus(item, "completed")} okText="เสร็จสิ้น" cancelText="ย้อนกลับ"><Button disabled={!!savingID} loading={savingID === item.id}>เสร็จสิ้น</Button></Popconfirm>}
@@ -55,7 +56,7 @@ function WeeklyBookings({ shopID, date, onDateChange }: BookingListProps) {
   return <Row gutter={[24, 16]}>
     <Col span={24}><Flex justify="space-between" align="center" gap={16} wrap>
       <div><Typography.Title level={3} style={{ margin: 0 }}>การจอง</Typography.Title></div>
-      <Space wrap><DatePicker aria-label="วันที่จอง" format="DD/MM/YYYY" placeholder="DD/MM/YYYY" value={dayjs(date)} allowClear={false} disabled={!!savingID} onChange={value => { if (value) onDateChange(value.format("YYYY-MM-DD")); }} /><Button aria-label="โหลดการจองใหม่" icon={<ReloadOutlined />} loading={loading} disabled={!!savingID} onClick={reload} />{canManage && <Button type="primary" icon={<PlusOutlined />} disabled={!data.services.length || !data.staff.length || !!savingID} onClick={() => setOpen(true)}>เพิ่มการจอง</Button>}</Space>
+      <Space wrap><DatePicker aria-label="วันที่จอง" format="DD/MM/YYYY" placeholder="DD/MM/YYYY" value={dayjs(date)} allowClear={false} disabled={!!savingID} onChange={value => { if (value) onDateChange(value.format("YYYY-MM-DD")); }} /><Button aria-label="โหลดการจองใหม่" icon={<ReloadOutlined />} loading={loading} disabled={!!savingID} onClick={reload} />{canManage && <Button type="primary" icon={<PlusOutlined />} disabled={!canEdit || !data.services.length || !data.staff.length || !!savingID} onClick={() => setOpen(true)}>เพิ่มการจอง</Button>}</Space>
     </Flex></Col>
     <Col span={24}><Flex justify="space-between" gap={16} wrap>
       <Space><Button disabled={!!savingID} onClick={() => onDateChange(dayjs(date).subtract(7, "day").format("YYYY-MM-DD"))}>7 วันก่อนหน้า</Button><Button disabled={!!savingID} onClick={() => onDateChange(localDate())}>วันนี้</Button><Button disabled={!!savingID} onClick={() => onDateChange(dayjs(date).add(7, "day").format("YYYY-MM-DD"))}>7 วันถัดไป</Button></Space>
@@ -63,6 +64,7 @@ function WeeklyBookings({ shopID, date, onDateChange }: BookingListProps) {
     </Flex></Col>
     <Col span={24}><Typography.Text strong>ตั้งแต่วันที่ : {dayjs(date).format("DD/MM/YYYY")} – {dayjs(date).add(6, "day").format("DD/MM/YYYY")}</Typography.Text></Col>
     {canManage && (!data.services.length || !data.staff.length) && <Col span={24}><Alert type="info" showIcon title="กรุณาเพิ่มบริการและผู้ให้บริการที่เปิดใช้งานก่อนสร้างการจอง" /></Col>}
+    {data?.subscription_active === false && <Col span={24}><Alert type="warning" showIcon title="ร้านหรือพนักงานอยู่นอกสิทธิ์แพ็กเกจ หรือกำลังรอเลือกสิทธิ์ Free" description="ดูนัดเดิม ยืนยัน เสร็จสิ้น หรือยกเลิกนัดได้ตามสิทธิ์ แต่ยังเพิ่ม แก้ข้อมูล หรือเลื่อนนัดไม่ได้ กรุณาติดต่อเจ้าของร้านเพื่อตรวจสอบแพ็กเกจ" /></Col>}
     {data?.shop_status === "inactive" && <Col span={24}><Alert type="warning" showIcon title="ร้านค้าปิดใช้งาน ดูรายการจองได้อย่างเดียว" /></Col>}
     <Col span={24}>{error ? <Alert type="error" showIcon title={error} action={<Button onClick={reload} loading={loading}>ลองใหม่</Button>} /> : <Card>
       {view === "calendar" ? <Card loading={loading} variant="borderless" styles={{ body: { padding: 0 } }}><BookingCalendar date={date} items={data?.items || []} openingTime={data?.opening_time || null} closingTime={data?.closing_time || null} onSelect={item => setSelectedID(item.id)} /></Card> : <Table<Booking> rowKey="id" loading={loading} dataSource={data?.items || []} scroll={{ x: 1050 }} locale={{ emptyText: "ไม่มีการจองในช่วง 7 วันที่เลือก" }} columns={[
@@ -93,9 +95,9 @@ function WeeklyBookings({ shopID, date, onDateChange }: BookingListProps) {
         ...(selected.remark ? [{ key: "remark", label: "เหตุผลการยกเลิก", children: <span style={{ whiteSpace: "pre-wrap" }}>{selected.remark}</span> }] : []),
       ]} />}
     </Drawer>
-    {data && <BookingDrawer shopID={shopID} date={date} services={data.services} staff={data.staff} role={data.role} openingTime={data.opening_time} closingTime={data.closing_time} open={open} onClose={() => setOpen(false)} onCreated={createdDate => { if (createdDate >= date && createdDate < dayjs(date).add(7, "day").format("YYYY-MM-DD")) reload(); else onDateChange(createdDate); }} />}
+    {data && <BookingDrawer shopID={shopID} date={date} services={data.services} staff={data.staff} role={data.role} openingTime={data.opening_time} closingTime={data.closing_time} open={open && canEdit} onClose={() => setOpen(false)} onCreated={createdDate => { if (createdDate >= date && createdDate < dayjs(date).add(7, "day").format("YYYY-MM-DD")) reload(); else onDateChange(createdDate); }} />}
     {cancelling && cancelling.can_manage && canManage && <CancelBookingDrawer key={cancelling.id} shopID={shopID} booking={cancelling} onClose={() => setCancelling(undefined)} onCancelled={updated => setData(previous => previous ? { ...previous, items: previous.items.map(item => item.id === updated.id ? updated : item) } : previous)} />}
-    {editingBooking && editingBooking.can_manage && canManage && <EditBookingDrawer key={editingBooking.id} shopID={shopID} booking={editingBooking} services={data?.services || []} openingTime={data?.opening_time || null} closingTime={data?.closing_time || null} onClose={() => setEditingBooking(undefined)} onSaved={updated => { const updatedDate = localDate(new Date(updated.starts_at)); if (updatedDate >= date && updatedDate < dayjs(date).add(7, "day").format("YYYY-MM-DD")) reload(); else onDateChange(updatedDate); }} />}
+    {editingBooking && editingBooking.can_manage && canEdit && <EditBookingDrawer key={editingBooking.id} shopID={shopID} booking={editingBooking} services={data?.services || []} openingTime={data?.opening_time || null} closingTime={data?.closing_time || null} onClose={() => setEditingBooking(undefined)} onSaved={updated => { const updatedDate = localDate(new Date(updated.starts_at)); if (updatedDate >= date && updatedDate < dayjs(date).add(7, "day").format("YYYY-MM-DD")) reload(); else onDateChange(updatedDate); }} />}
   </Row>;
 }
 

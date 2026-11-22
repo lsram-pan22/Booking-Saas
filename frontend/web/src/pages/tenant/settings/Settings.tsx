@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, App, Button, Card, Col, Form, Input, Row, Typography } from "antd";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { updateTenantProfile } from "../../../api/tenant/account.api";
 import type { TenantLayoutContext } from "../../../types/tenant/layout.type";
 import type { TenantSettingsForm } from "../../../types/tenant/account.type";
@@ -18,6 +18,7 @@ export default function Settings() {
   if (error) return <Alert type="error" showIcon title={error} action={<Button onClick={() => window.location.reload()}>ลองใหม่</Button>} />;
   return <>
     <Typography.Title level={3} style={{ marginTop: 0 }}>ตั้งค่าบัญชี</Typography.Title>
+    <Link to="/tenant/change-password">เปลี่ยนรหัสผ่าน</Link>
     <Row><Col xs={24} lg={18} xl={14}><Card title="ข้อมูลส่วนตัว" loading={!profile}>
       {profile && <Form<TenantSettingsForm> layout="vertical" initialValues={profile.user} onFinish={submit} disabled={saving}>
         <Row gutter={16}>

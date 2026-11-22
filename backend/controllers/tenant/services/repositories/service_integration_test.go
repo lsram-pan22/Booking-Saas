@@ -45,6 +45,7 @@ func TestServiceAccessIntegration(t *testing.T) {
 	for _, table := range []string{"users", "tenants", "tenant_members", "services"} {
 		exec("CREATE TEMP TABLE " + table + " (LIKE public." + table + " INCLUDING ALL)")
 	}
+	exec(`CREATE TEMP TABLE subscriptions(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),user_id UUID NOT NULL,status TEXT NOT NULL DEFAULT 'active',starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),ends_at TIMESTAMPTZ,selection_required BOOLEAN NOT NULL DEFAULT FALSE)`)
 	user := func(name string) string {
 		t.Helper()
 		var id string
@@ -54,6 +55,7 @@ func TestServiceAccessIntegration(t *testing.T) {
 		return id
 	}
 	owner, staff, other := user("owner"), user("staff"), user("other")
+	exec(`INSERT INTO subscriptions(user_id) VALUES($1),($2),($3)`, owner, staff, other)
 	shop := func(slug string) string {
 		t.Helper()
 		var id string
@@ -116,6 +118,21 @@ func TestServiceAccessIntegration(t *testing.T) {
 	if _, err = repo.Save(ctx, owner, first, active.ID, input); err != nil {
 		t.Fatal("inactive shop owner cannot edit", err)
 	}
+	// Expiry restricts service writes without hiding the existing catalog.
+	exec(`UPDATE subscriptions SET ends_at=NOW()-INTERVAL '1 second' WHERE user_id=$1`, owner)
+	_, err = repo.Save(ctx, owner, first, "", input)
+	if !errors.Is(err, utils.ErrSubscriptionRequired) {
+		t.Fatalf("expired owner created service: %v", err)
+	}
+	_, err = repo.Save(ctx, owner, first, active.ID, input)
+	if !errors.Is(err, utils.ErrSubscriptionRequired) {
+		t.Fatalf("expired owner edited service: %v", err)
+	}
+	expiredList, err := repo.List(ctx, owner, first)
+	if err != nil || expiredList.SubscriptionActive || len(expiredList.Items) != 2 {
+		t.Fatalf("expired catalog read: %+v %v", expiredList, err)
+	}
+	exec(`UPDATE subscriptions SET ends_at=NULL WHERE user_id=$1`, owner)
 	exec(`UPDATE tenants SET status='suspended' WHERE id=$1`, first)
 	_, err = repo.List(ctx, owner, first)
 	denied(err)

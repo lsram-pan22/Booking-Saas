@@ -1,5 +1,45 @@
 # Booking-Saas
 
+## Create a new database
+
+Configure `backend/.env`, then run from `backend/`:
+
+```powershell
+go run ./cmd/migrate
+```
+
+This explicitly creates the application's tables in `public` and applies all
+pending embedded SQL migrations in one transaction. `001_core_schema.sql`
+consolidates the original core schema, followed by migrations 013 onward.
+`public.schema_migrations` records filenames and SHA-256 checksums; rerunning the
+command skips applied versions and rejects changed migration files. An existing
+schema created outside this runner must be reviewed before adopting this ledger;
+the runner does not silently overwrite or mark existing tables as migrated.
+
+The initial catalog contains only Free: one shop and two users per shop,
+including its owner. No administrator account or default password is created.
+Migration 022 enables RLS and revokes direct table access from Supabase's `anon`
+and `authenticated` roles. Database access is through the Go backend's database
+role, which must own these tables or have appropriate privileges and RLS access.
+These migrations do not alter Supabase's `auth` schema.
+
+The PostgreSQL integration scenarios passed against the configured Supabase
+instance on 2026-11-19, including cross-shop authorization, concurrent booking
+and rescheduling conflicts, member quotas, password/session changes, and Free
+fallback. To run them again from `backend/`:
+
+```powershell
+$env:TENANT_REGISTRATION_DB_TEST = '1'
+$env:SUBSCRIPTION_FALLBACK_DB_TEST = '1'
+$env:PASSWORD_RESET_DB_TEST = '1'
+go test -count=1 -p 1 -timeout 240s ./...
+```
+
+Tests create temporary tables or isolated schemas and clean up after themselves.
+The database role needs permission to create these fixtures. Longer fixture
+deadlines allow for hosted database latency; application request timeouts remain
+unchanged.
+
 ## Project layout
 
 ```text
@@ -130,7 +170,85 @@ while excluding the booking being edited. A moved start must be in the future
 within two years. Scheduling and service changes are stored with before/after
 values in the existing edit history transaction. The provider remains assigned.
 
-## Checks
+## Subscription expiry permissions
+
+Apply `backend/migrations/020_subscription_free_fallback.sql` before starting
+this version. Paid subscription expiry is reconciled on login/profile reads and
+authenticated tenant requests, including staff requests. The old paid record is
+marked `expired` and retained; a new active Free snapshot has no expiry date.
+The Free catalog package must be active, zero-priced, and have positive quotas.
+If it is unavailable, the expired account retains the restricted read/status
+behavior instead of receiving paid rights or losing access to old data.
+
+Concurrent reconciliation is serialized per owner and a unique partial index
+allows only one active subscription per account. The migration replaces an old
+single-row-per-user unique constraint/index, if present, to support history.
+It does not discard historical rows; conflicting pre-existing active rows cause
+the migration to fail atomically and must be reviewed before retrying.
+
+When existing shops or active users exceed Free quotas, `selection_required`
+blocks new work until the owner selects shops and staff on the Packages page.
+Separate `plan_enabled` flags retain shop/member statuses and all booking history.
+The owner counts toward each shop's user quota. Unselected shops/staff can still
+read and manage existing booking statuses with their original permissions.
+The selected scope is enforced by booking/service writes, provider choices,
+shop creation and staff activation; selection updates commit atomically.
+`GET /api/v1/tenant/subscription` shows history and eligible scope options;
+`PUT /api/v1/tenant/subscription/selection` accepts `shop_ids` and `member_ids`.
+Set `SUBSCRIPTION_FALLBACK_DB_TEST=1` to run the isolated PostgreSQL fallback,
+migration, concurrency, ownership and scope-selection integration check.
+
+Booking creation and all booking edits (including the legacy customer-edit route)
+require a currently active subscription belonging to an active owner of the shop.
+The staff member's personal subscription cannot grant rights to that shop.
+Missing, expired, inactive, and not-yet-started subscriptions block these writes.
+Service creation and edits use the same rule. Checks run inside each write's
+transaction and lock the eligible subscription until the write commits.
+
+Existing bookings and services remain readable. Confirming, completing and
+cancelling existing bookings remain available with the existing assignment and
+shop-status checks. Subscription expiry does not grant new role permissions.
+Account management, password resets and disabling staff remain available;
+adding shops/staff and reactivating staff still require an active subscription.
+Booking/service lists return `subscription_active` for the shop owner's plan,
+so both staff and owner screens can explain the restriction and disable edits.
+Denied writes return HTTP 403 with `code: SUBSCRIPTION_REQUIRED`, preserving login.
+Free fallback and scope selection restore eligible writes without changing
+shop/member statuses. This version requires migration 020 described above.
+
+The existing opt-in PostgreSQL booking/service integration tests also cover
+expiry, owner-vs-staff entitlements, existing status actions, and renewal.
+
+## Password recovery
+
+Apply `backend/migrations/019_password_reset.sql` before starting the updated API.
+Owners reset a staff account from the shop member list. Super Admin resets an
+owner account from User Management (search returns up to 100 active owners).
+The administrator chooses a temporary password and communicates it directly to
+the user; the system does not send email. Passwords require at least 12 characters
+and at most 72 UTF-8 bytes. Existing accounts keep their passwords.
+
+A reset increments the account's session version and requires a personal password
+on next login. Every protected API checks the current version against PostgreSQL,
+so previously issued tokens are rejected on their next request. A temporary-password
+session can only read its profile and change its password; it cannot manage bookings
+or accounts. Changing the password increments the version again and requires login.
+Reset/change and their audit entry commit together. Audit records contain no passwords.
+Owners cannot reset other owners or staff accounts with memberships in other shops.
+Accounts with an owner subscription are recovered through Super Admin.
+
+Run `PASSWORD_RESET_DB_TEST=1 go test ./controllers/tenant/account/repositories`
+from `backend` to opt into PostgreSQL reset/access/audit integration checks. On
+PowerShell, set `$env:PASSWORD_RESET_DB_TEST='1'` before running `go test`.
+The check creates and removes a unique schema containing synthetic accounts.
+
+## Validation
+
+See `SECURITY.md` for the access matrix, security controls, database checks and
+remaining production work. Apply `backend/migrations/021_temporary_password_expiry.sql`
+for the 24-hour temporary-password deadline. Password resets now also require
+`current_password` from the owner/admin performing the reset. Logout revokes
+all devices on the server instead of only clearing browser storage.
 
 Run `go test ./...` from `backend`, and `npm run build`, `npm run lint` from
 `frontend/web`.

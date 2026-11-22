@@ -13,9 +13,11 @@ export interface TenantLoginRequest {
 }
 
 export interface TenantProfile {
+  enabled_shop_count: number;
+  must_change_password: boolean;
   workspace_role: "owner" | "staff";
   owned_shop_count: number;
-	 subscription: TenantSubscription | null;
+	subscription: TenantSubscription | null;
   user: TenantUser;
   tenants: TenantShop[];
 }
@@ -32,6 +34,7 @@ export interface TenantRegistrationResult {
 }
 
 export interface TenantSubscription {
+  selection_required: boolean;
   shop_limit: number;
   id: string;
   package_id: string;

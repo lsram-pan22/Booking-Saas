@@ -33,7 +33,8 @@ func TestRegistrationFreeSubscriptionIntegration(t *testing.T) {
 	poolCfg := utils.DB.Config()
 	poolCfg.MaxConns = 1
 	poolCfg.MinConns = 0
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	// This fixture performs many sequential round trips against hosted databases.
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {

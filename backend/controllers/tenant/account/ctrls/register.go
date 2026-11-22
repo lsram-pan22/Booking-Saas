@@ -4,6 +4,7 @@ import (
 	"booking-saas/controllers/tenant/account/models"
 	"booking-saas/controllers/tenant/account/repositories"
 	"booking-saas/controllers/tenant/account/usecases"
+	"booking-saas/middleware"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -18,7 +19,7 @@ func NewRegisterController(u *usecases.RegisterUsecase) *RegisterController {
 func (ctrl *RegisterController) Register(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := middleware.DecodeJSON(c, &req); err != nil {
 		c.JSON(400, gin.H{"success": false, "message": "กรุณากรอกข้อมูลสมัครให้ครบถ้วนและถูกต้อง"})
 		return
 	}

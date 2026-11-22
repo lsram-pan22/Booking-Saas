@@ -1,12 +1,14 @@
 package ctrls
 
 import (
+	"booking-saas/middleware"
 	"errors"
 	"log"
 	"net/http"
 
 	"booking-saas/controllers/super_admin/auth/models"
 	"booking-saas/controllers/super_admin/auth/usecases"
+	"booking-saas/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,10 +26,11 @@ func NewLoginController(
 }
 
 func (ctrl *LoginController) Login(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.SuperAdminLoginRequest
 
 	// รับและตรวจสอบ Request
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := middleware.DecodeJSON(c, &req); err != nil {
 		c.JSON(http.StatusBadRequest, models.SuperAdminLoginResponse{
 			Success: false,
 			Message: "Invalid request",
@@ -59,6 +62,7 @@ func (ctrl *LoginController) Login(c *gin.Context) {
 		return
 	}
 
+	c.Set(middleware.ClaimsKey, &utils.JWTClaims{UserID: data.User.ID, Role: data.User.Role})
 	// Login สำเร็จ
 	c.JSON(http.StatusOK, models.SuperAdminLoginResponse{
 		Success: true,

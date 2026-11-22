@@ -14,6 +14,7 @@ export interface ServiceForm extends Omit<ServiceRequest, "price_satang" | "stat
   active: boolean;
 }
 export interface ServiceList {
+  subscription_active: boolean;
   shop_name: string;
   shop_status: string;
   role: "owner" | "staff";

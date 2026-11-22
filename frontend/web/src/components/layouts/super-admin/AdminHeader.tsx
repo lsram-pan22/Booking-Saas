@@ -1,5 +1,6 @@
 
-import { Layout, Avatar, Typography, Space, Dropdown } from "antd";
+import { App, Layout, Avatar, Typography, Space, Dropdown } from "antd";
+import { useState } from "react";
 import {
   UserOutlined,
   DownOutlined,
@@ -13,14 +14,15 @@ const { Text } = Typography;
 
 export default function AdminHeader() {
   const navigate = useNavigate();
+  const { message } = App.useApp();
+  const [signingOut, setSigningOut] = useState(false);
   const user = getCurrentUser();
 
-  const handleLogout = () => {
-    logout();
-
-    navigate("/super-admin/login", {
-      replace: true,
-    });
+  const handleLogout = async () => {
+    setSigningOut(true);
+    try { await logout(); navigate("/super-admin/login", { replace: true }); }
+    catch (error) { message.error(error instanceof Error ? error.message : "ออกจากระบบไม่สำเร็จ"); }
+    finally { setSigningOut(false); }
   };
 
   return (
@@ -46,7 +48,8 @@ export default function AdminHeader() {
             },
             {
               key: "logout",
-              label: "Logout",
+              label: "ออกจากระบบทุกอุปกรณ์",
+              disabled: signingOut,
               icon: <LogoutOutlined />,
               danger: true,
               onClick: handleLogout,

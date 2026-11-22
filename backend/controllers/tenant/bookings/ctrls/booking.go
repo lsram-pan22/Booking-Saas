@@ -5,6 +5,7 @@ import (
 	"booking-saas/controllers/tenant/bookings/repositories"
 	"booking-saas/controllers/tenant/bookings/usecases"
 	"booking-saas/middleware"
+	"booking-saas/utils"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -46,7 +47,7 @@ func (ctrl *BookingController) Create(c *gin.Context) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.CreateBookingRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		respondError(c, usecases.ErrInvalid)
 		return
 	}
@@ -65,7 +66,7 @@ func (ctrl *BookingController) SetStatus(c *gin.Context) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.StatusRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		respondError(c, usecases.ErrInvalid)
 		return
 	}
@@ -77,6 +78,10 @@ func (ctrl *BookingController) SetStatus(c *gin.Context) {
 	c.JSON(200, gin.H{"success": true, "data": data})
 }
 func respondError(c *gin.Context, err error) {
+	if errors.Is(err, utils.ErrSubscriptionRequired) {
+		c.JSON(403, gin.H{"success": false, "code": "SUBSCRIPTION_REQUIRED", "message": "ร้านหรือพนักงานอยู่นอกสิทธิ์แพ็กเกจ หรือกำลังรอเลือกสิทธิ์ Free ดูข้อมูลและเปลี่ยนสถานะนัดเดิมได้ แต่ยังสร้างหรือแก้ไขนัดไม่ได้"})
+		return
+	}
 	status, message := 500, "ไม่สามารถดำเนินการกับการจองได้ในขณะนี้"
 	switch {
 	case errors.Is(err, repositories.ErrInvalidSchedule):

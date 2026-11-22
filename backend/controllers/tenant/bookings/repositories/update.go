@@ -23,12 +23,22 @@ func (r *BookingRepository) Update(ctx context.Context, userID, shopID, bookingI
 		return empty, err
 	}
 	defer tx.Rollback(context.Background())
+	if err = utils.RequireShopSubscription(ctx, tx, shopID, userID); err != nil {
+		return empty, err
+	}
 	before, err := lockManageableBooking(ctx, tx, userID, shopID, bookingID)
 	if err != nil {
 		return empty, err
 	}
 	if before.Status != "pending" && before.Status != "confirmed" {
 		return empty, ErrReadOnly
+	}
+	var providerEnabled bool
+	if err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM tenant_members WHERE id=$1 AND tenant_id=$2 AND plan_enabled AND status='active')`, before.StaffMemberID, shopID).Scan(&providerEnabled); err != nil {
+		return empty, err
+	}
+	if !providerEnabled {
+		return empty, ErrUnavailable
 	}
 	after := before
 	after.CustomerName = req.CustomerName

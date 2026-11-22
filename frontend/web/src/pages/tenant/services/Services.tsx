@@ -21,22 +21,24 @@ function ShopServices({ shopID }: ShopServicesProps) {
     return () => controller.abort();
   }, [shopID, retry]);
   const canManage = data?.role === "owner" && ["active", "inactive"].includes(data.shop_status);
+  const canEdit = canManage && data?.subscription_active === true && !loading && !error;
   const saved = (service: ShopService) => setData(previous => previous ? { ...previous, items: previous.items.some(item => item.id === service.id) ? previous.items.map(item => item.id === service.id ? service : item) : [...previous.items, service] } : previous);
   return <Row gutter={[24, 24]}>
     <Col span={24}><Flex justify="space-between" align="center" gap={16} wrap>
       <div><Typography.Title level={3} style={{ margin: 0 }}>บริการของร้านค้า</Typography.Title></div>
-      {canManage && <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(undefined); setOpen(true); }}>เพิ่มบริการ</Button>}
+      {canManage && <Button type="primary" icon={<PlusOutlined />} disabled={!canEdit} onClick={() => { setEditing(undefined); setOpen(true); }}>เพิ่มบริการ</Button>}
     </Flex></Col>
+    {data?.subscription_active === false && <Col span={24}><Alert type="warning" showIcon title="ร้านหรือพนักงานอยู่นอกสิทธิ์แพ็กเกจ หรือกำลังรอเลือกสิทธิ์ Free" description="ดูบริการเดิมได้ แต่ยังเพิ่มหรือแก้ไขบริการไม่ได้ กรุณาตรวจสอบแพ็กเกจของร้าน" /></Col>}
     <Col span={24}>{error ? <Alert type="error" showIcon title={error} action={<Button loading={loading} onClick={() => { setLoading(true); setError(""); setRetry(value => value + 1); }}>ลองใหม่</Button>} /> : <Card>
       <Table<ShopService> rowKey="id" loading={loading} dataSource={data?.items || []} scroll={{ x: 650 }} locale={{ emptyText: "ยังไม่มีบริการ" }} columns={[
         { title: "บริการ", dataIndex: "name", render: (name: string, service) => <><Typography.Text strong>{name}</Typography.Text>{service.description && <Typography.Paragraph type="secondary" ellipsis={{ rows: 2 }} style={{ marginBottom: 0 }}>{service.description}</Typography.Paragraph>}</> },
         { title: "ระยะเวลา", dataIndex: "duration_minutes", render: (value: number) => `${value} นาที`, width: 120 },
         { title: "ราคา", dataIndex: "price_satang", render: (value: number) => (value / 100).toLocaleString("th-TH", { style: "currency", currency: "THB" }), width: 140 },
         { title: "สถานะ", dataIndex: "status", render: (value: string) => <Tag color={value === "active" ? "green" : "default"}>{value === "active" ? "เปิดใช้งาน" : "ปิดใช้งาน"}</Tag>, width: 120 },
-        ...(canManage ? [{ title: "จัดการ", key: "actions", width: 100, render: (_: unknown, service: ShopService) => <Button onClick={() => { setEditing(service); setOpen(true); }}>แก้ไข</Button> }] : []),
+        ...(canManage ? [{ title: "จัดการ", key: "actions", width: 100, render: (_: unknown, service: ShopService) => <Button disabled={!canEdit} onClick={() => { setEditing(service); setOpen(true); }}>แก้ไข</Button> }] : []),
       ]} />
     </Card>}</Col>
-    {canManage && <ServiceDrawer shopID={shopID} open={open} service={editing} onClose={() => setOpen(false)} onSaved={saved} />}
+    {canEdit && <ServiceDrawer shopID={shopID} open={open} service={editing} onClose={() => setOpen(false)} onSaved={saved} />}
   </Row>;
 }
 

@@ -19,8 +19,9 @@ type Service struct {
 }
 
 type ServiceList struct {
-	ShopName   string    `json:"shop_name"`
-	ShopStatus string    `json:"shop_status"`
-	Role       string    `json:"role"`
-	Items      []Service `json:"items"`
+	SubscriptionActive bool      `json:"subscription_active"`
+	ShopName           string    `json:"shop_name"`
+	ShopStatus         string    `json:"shop_status"`
+	Role               string    `json:"role"`
+	Items              []Service `json:"items"`
 }

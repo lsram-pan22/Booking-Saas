@@ -44,7 +44,7 @@ func TestTenantLogin(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repo := &loginStub{account: models.Account{User: models.TenantUser{ID: "11111111-1111-4111-8111-111111111111", Email: "owner@example.com"}, PasswordHash: hash, Status: tt.status, SystemRole: tt.role}, err: tt.repoErr}
+			repo := &loginStub{account: models.Account{SessionVersion: 9, User: models.TenantUser{ID: "11111111-1111-4111-8111-111111111111", Email: "owner@example.com"}, PasswordHash: hash, Status: tt.status, SystemRole: tt.role}, err: tt.repoErr}
 			if tt.tenants {
 				repo.profile = models.Profile{User: repo.account.User, Tenants: []models.Tenant{{ID: "tenant-id", Role: "owner", Status: "pending"}}}
 			}
@@ -61,9 +61,22 @@ func TestTenantLogin(t *testing.T) {
 			}
 			claims := &utils.JWTClaims{}
 			_, err = jwt.ParseWithClaims(data.AccessToken, claims, func(_ *jwt.Token) (interface{}, error) { return []byte(cfg.JWT.Secret), nil }, jwt.WithValidMethods([]string{"HS256"}), jwt.WithIssuer("booking-saas"))
-			if err != nil || claims.Role != "user" || claims.UserID != "11111111-1111-4111-8111-111111111111" || data.ExpiresIn != 3600 || repo.email != "owner@example.com" {
+			if err != nil || claims.SessionVersion != 9 || claims.Role != "user" || claims.UserID != "11111111-1111-4111-8111-111111111111" || data.ExpiresIn != 3600 || repo.email != "owner@example.com" {
 				t.Fatal("incorrect tenant session")
 			}
 		})
+	}
+}
+
+func TestExpiredTemporaryPasswordCannotLogin(t *testing.T) {
+	hash, err := utils.HashPassword("temporary-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	past := time.Now().Add(-time.Second)
+	repo := &loginStub{account: models.Account{User: models.TenantUser{ID: "11111111-1111-4111-8111-111111111111"}, PasswordHash: hash, Status: "active", SystemRole: "user", MustChangePassword: true, ResetExpiresAt: &past}}
+	cfg := &config.Config{JWT: config.JWTConfig{Secret: "test-secret", ExpiresIn: time.Hour}}
+	if _, err := NewLoginUsecase(repo, cfg).Login(context.Background(), models.LoginRequest{Username: "staff", Password: "temporary-password"}); !errors.Is(err, ErrInvalidCredentials) {
+		t.Fatal("expired temporary password logged in", err)
 	}
 }

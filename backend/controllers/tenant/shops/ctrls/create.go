@@ -22,7 +22,7 @@ func (ctrl *ShopController) Create(c *gin.Context) {
 	}
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
 	var req models.CreateShopRequest
-	if c.ShouldBindJSON(&req) != nil {
+	if middleware.DecodeJSON(c, &req) != nil {
 		c.JSON(400, gin.H{"success": false, "message": "กรุณากรอกชื่อและประเภทร้านค้า"})
 		return
 	}

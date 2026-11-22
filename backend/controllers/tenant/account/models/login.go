@@ -1,15 +1,18 @@
 package models
 
+import "time"
+
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
 	Password string `json:"password" binding:"required"`
 }
 type Tenant struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Status string `json:"status"`
-	Role   string `json:"role"`
+	PlanEnabled bool   `json:"plan_enabled"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Status      string `json:"status"`
+	Role        string `json:"role"`
 }
 type TenantUser struct {
 	Role       string `json:"role,omitempty"`
@@ -20,17 +23,22 @@ type TenantUser struct {
 	Phone      string `json:"phone"`
 }
 type Account struct {
-	User         TenantUser
-	PasswordHash string
-	SystemRole   string
-	Status       string
+	MustChangePassword bool
+	ResetExpiresAt     *time.Time
+	SessionVersion     int64
+	User               TenantUser
+	PasswordHash       string
+	SystemRole         string
+	Status             string
 }
 type Profile struct {
-	WorkspaceRole  string        `json:"workspace_role"`
-	OwnedShopCount int           `json:"owned_shop_count"`
-	Subscription   *Subscription `json:"subscription"`
-	User           TenantUser    `json:"user"`
-	Tenants        []Tenant      `json:"tenants"`
+	EnabledShopCount   int           `json:"enabled_shop_count"`
+	MustChangePassword bool          `json:"must_change_password"`
+	WorkspaceRole      string        `json:"workspace_role"`
+	OwnedShopCount     int           `json:"owned_shop_count"`
+	Subscription       *Subscription `json:"subscription"`
+	User               TenantUser    `json:"user"`
+	Tenants            []Tenant      `json:"tenants"`
 }
 type LoginData struct {
 	AccessToken string `json:"access_token"`

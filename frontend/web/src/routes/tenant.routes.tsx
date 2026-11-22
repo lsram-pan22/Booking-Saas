@@ -13,6 +13,7 @@ import Home from "../pages/tenant/home/Home";
 import StaffAccess from "../pages/tenant/home/StaffAccess";
 import Services from "../pages/tenant/services/Services";
 import Bookings from "../pages/tenant/bookings/Bookings";
+import ChangePassword from "../pages/tenant/settings/ChangePassword";
 
 export const tenantRoutes: RouteObject = {
   path: "/tenant",
@@ -22,7 +23,7 @@ export const tenantRoutes: RouteObject = {
     { path: "login", element: <Login /> },
     {
       element: <ProtectedRoute />,
-      children: [{ element: <TenantLayout />, children: [
+      children: [{ path: "change-password", element: <ChangePassword /> }, { element: <TenantLayout />, children: [
         { path: "home", element: <Home /> },
         { path: "staff", element: <StaffAccess /> },
         { path: "shops/:shopID/dashboard", element: <Navigate to="../bookings" relative="path" replace /> },

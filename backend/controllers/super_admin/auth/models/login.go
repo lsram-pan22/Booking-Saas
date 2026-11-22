@@ -12,6 +12,7 @@ type SuperAdminLoginResponse struct {
 }
 
 type SuperAdminLoginData struct {
+	ExpiresIn   int64          `json:"expires_in"`
 	AccessToken string         `json:"access_token"`
 	TokenType   string         `json:"token_type"`
 	User        SuperAdminUser `json:"user"`
@@ -25,11 +26,12 @@ type SuperAdminUser struct {
 }
 
 type SuperAdminAccount struct {
-	ID           string
-	Username     string
-	Email        string
-	PasswordHash string
-	FullName     string
-	SystemRole   string
-	Status       string
+	SessionVersion int64
+	ID             string
+	Username       string
+	Email          string
+	PasswordHash   string
+	FullName       string
+	SystemRole     string
+	Status         string
 }
