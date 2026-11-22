@@ -3,6 +3,7 @@ import { Alert, App, Button, Col, DatePicker, Drawer, Flex, Form, Input, Row, Se
 import dayjs from "dayjs";
 import { createBooking } from "../../../api/tenant/bookings.api";
 import type { BookingDrawerProps, BookingForm } from "../../../types/tenant/booking.type";
+import BookingStartTimeField from "./BookingStartTimeField";
 
 export default function BookingDrawer({ shopID, date, services, staff, role, openingTime, closingTime, open, onClose, onCreated }: BookingDrawerProps) {
   const [form] = Form.useForm<BookingForm>();
@@ -34,7 +35,7 @@ export default function BookingDrawer({ shopID, date, services, staff, role, ope
         <Col span={24}><Form.Item name="service_id" label="บริการ" rules={[{ required: true, message: "กรุณาเลือกบริการ" }]}><Select showSearch optionFilterProp="label" placeholder="เลือกบริการ" options={services.map(item => ({ value: item.id, label: `${item.name} (${item.duration_minutes} นาที)` }))} /></Form.Item></Col>
         <Col span={24}><Form.Item name="staff_member_id" label="ผู้ให้บริการ" rules={[{ required: true, message: "กรุณาเลือกผู้ให้บริการ" }]}><Select disabled={saving || role === "staff"} showSearch optionFilterProp="label" placeholder="เลือกผู้ให้บริการ" options={staff.map(item => ({ value: item.id, label: `${item.name}${item.role === "owner" ? " (เจ้าของร้าน)" : ""}` }))} /></Form.Item></Col>
         <Col xs={24} sm={12}><Form.Item name="date" label="วันที่ (เวลาไทย)" rules={[{ required: true, message: "กรุณาเลือกวันที่" }]}><DatePicker format="DD/MM/YYYY" placeholder="DD/MM/YYYY" style={{ width: "100%" }} /></Form.Item></Col>
-        <Col xs={24} sm={12}><Form.Item name="time" label="เวลาเริ่ม" extra={openingTime && closingTime ? `ร้านเปิด ${openingTime}–${closingTime} น.` : undefined} rules={[{ required: true, message: "กรุณาเลือกเวลา" }]}><Input type="time" step={60} min={openingTime || undefined} max={closingTime === "24:00" ? "23:59" : closingTime || undefined} /></Form.Item></Col>
+        <BookingStartTimeField openingTime={openingTime} closingTime={closingTime} />
         <Col span={24}><Form.Item name="note" label="หมายเหตุ"><Input.TextArea rows={3} maxLength={2000} showCount /></Form.Item></Col>
         {service && <Col span={24}><Alert showIcon type="info" title={`${service.duration_minutes} นาที · ${(service.price_satang / 100).toLocaleString("th-TH", { style: "currency", currency: "THB" })}`} description="การจองใหม่มีสถานะรอยืนยัน ระบบคำนวณเวลาสิ้นสุดและตรวจเวลาทับซ้อนก่อนบันทึก" /></Col>}
       </Row>

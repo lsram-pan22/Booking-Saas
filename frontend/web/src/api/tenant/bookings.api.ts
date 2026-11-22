@@ -1,5 +1,5 @@
 import { clearAuthSession, getAccessToken } from "../../utils/auth";
-import type { Booking, BookingList, BookingStatus, BookingStatusRequest, BookingCustomerRequest, BookingUpdateRequest, CreateBookingRequest } from "../../types/tenant/booking.type";
+import type { Booking, BookingEdit, BookingList, BookingStatus, BookingStatusRequest, BookingCustomerRequest, BookingUpdateRequest, CreateBookingRequest } from "../../types/tenant/booking.type";
 
 async function requestBooking<T>(shopID: string, path: string, method: string, body?: CreateBookingRequest | BookingStatusRequest | BookingCustomerRequest | BookingUpdateRequest, signal?: AbortSignal): Promise<T> {
   const token = getAccessToken();
@@ -14,6 +14,8 @@ async function requestBooking<T>(shopID: string, path: string, method: string, b
   return result.data as T;
 }
 export const getBookings = (shopID: string, date: string, signal?: AbortSignal) => requestBooking<BookingList>(shopID, `?date=${encodeURIComponent(date)}&days=7`, "GET", undefined, signal);
+export const getBookingEditHistory = (shopID: string, id: string, signal?: AbortSignal) =>
+  requestBooking<BookingEdit[]>(shopID, `/${encodeURIComponent(id)}/edit-history`, "GET", undefined, signal);
 export const createBooking = (shopID: string, body: CreateBookingRequest) => requestBooking<Booking>(shopID, "", "POST", body);
 export const setBookingStatus = (shopID: string, id: string, status: BookingStatus, remark?: string) => requestBooking<Booking>(shopID, `/${encodeURIComponent(id)}/status`, "PATCH", { status, remark });
 export const updateBooking = (shopID: string, id: string, body: BookingUpdateRequest) => requestBooking<Booking>(shopID, `/${encodeURIComponent(id)}`, "PATCH", body);

@@ -1,14 +1,18 @@
 package models
 
 type CreateShopRequest struct {
-	Name         string `json:"name" binding:"required"`
-	BusinessType string `json:"business_type" binding:"required"`
+	Name         string  `json:"name" binding:"required"`
+	BusinessType string  `json:"business_type" binding:"required"`
+	OpeningTime  *string `json:"opening_time"`
+	ClosingTime  *string `json:"closing_time"`
 }
 
 type NewShop struct {
 	Name         string
 	BusinessType string
 	Slug         string
+	OpeningTime  *string
+	ClosingTime  *string
 }
 
 type UpdateShopRequest struct {

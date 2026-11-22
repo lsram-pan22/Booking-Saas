@@ -11,18 +11,16 @@ export interface TenantShop {
 export interface CreateShopRequest {
   name: string;
   business_type: string;
+  opening_time: string;
+  closing_time: string;
 }
 
 export interface UpdateShopRequest extends CreateShopRequest {
   status: "active" | "inactive";
-  opening_time: string;
-  closing_time: string;
 }
 
 export interface EditShopForm extends CreateShopRequest {
   active: boolean;
-  opening_time: string;
-  closing_time: string;
 }
 
 export interface ShopDetails extends TenantShop {
@@ -106,8 +104,6 @@ export interface AddMemberDrawerProps {
 export const businessTypes = [
   { value: "salon", label: "ร้านทำผม / ร้านเสริมสวย" },
   { value: "spa", label: "สปา / นวด" },
-  { value: "clinic", label: "คลินิก" },
-  { value: "fitness", label: "ฟิตเนส / สตูดิโอ" },
   { value: "other", label: "ธุรกิจบริการอื่น ๆ" },
 ];
 

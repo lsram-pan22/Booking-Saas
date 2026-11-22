@@ -7,6 +7,15 @@ import (
 	"time"
 )
 
+func (u *BookingUsecase) EditHistory(ctx context.Context, userID, shopID, bookingID string) ([]models.BookingEdit, error) {
+	if !utils.ValidUserID(userID) || !utils.ValidUserID(shopID) || !utils.ValidUserID(bookingID) {
+		return nil, ErrInvalid
+	}
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	return u.Repo.EditHistory(ctx, userID, shopID, bookingID)
+}
+
 func (u *BookingUsecase) Update(ctx context.Context, userID, shopID, bookingID string, req models.UpdateBookingRequest) (models.Booking, error) {
 	var valid bool
 	req.CustomerRequest, valid = normalizeCustomer(req.CustomerRequest)

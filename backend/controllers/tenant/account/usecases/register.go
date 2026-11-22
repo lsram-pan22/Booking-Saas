@@ -14,6 +14,7 @@ import (
 
 var ErrInvalidRegistration = errors.New("invalid registration data")
 var phonePattern = regexp.MustCompile(`^(0[0-9]{8,9}|\+66[0-9]{8,9})$`)
+var registrationPasswordPattern = regexp.MustCompile(`^[0-9]*[A-Za-z][0-9]*[A-Za-z][0-9]*[A-Za-z][0-9]*$`)
 
 type RegisterRepository interface {
 	Register(context.Context, models.Registration) (models.RegisterData, error)
@@ -29,7 +30,8 @@ func (u *RegisterUsecase) Register(ctx context.Context, req models.RegisterReque
 	req.Email = strings.ToLower(strings.TrimSpace(req.Email))
 	req.Phone = strings.NewReplacer(" ", "", "-", "", "\t", "").Replace(strings.TrimSpace(req.Phone))
 	address, err := mail.ParseAddress(req.Email)
-	if err != nil || address.Address != req.Email || len(req.Email) > 254 || req.FullName == "" || utf8.RuneCountInString(req.FullName) > 100 || !phonePattern.MatchString(req.Phone) || utf8.RuneCountInString(req.Password) < 12 || len(req.Password) > 72 {
+	validPassword := len(req.Password) == 8 && registrationPasswordPattern.MatchString(req.Password)
+	if err != nil || address.Address != req.Email || len(req.Email) > 254 || req.FullName == "" || utf8.RuneCountInString(req.FullName) > 100 || !phonePattern.MatchString(req.Phone) || !validPassword {
 		return models.RegisterData{}, ErrInvalidRegistration
 	}
 	hash, err := utils.HashPassword(req.Password)

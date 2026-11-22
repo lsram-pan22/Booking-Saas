@@ -22,7 +22,7 @@ func (r *registrationStub) Register(_ context.Context, input models.Registration
 	return models.RegisterData{UserID: "11111111-1111-4111-8111-111111111111"}, r.err
 }
 func validRequest() models.RegisterRequest {
-	return models.RegisterRequest{FullName: " Owner ", Email: " Owner@Example.com ", Phone: "081-234-5678", Password: "a-long-password"}
+	return models.RegisterRequest{FullName: " Owner ", Email: " Owner@Example.com ", Phone: "081-234-5678", Password: "1a23B4c5"}
 }
 func TestRegisterHashesAndNormalizes(t *testing.T) {
 	repo := &registrationStub{}
@@ -62,7 +62,9 @@ func TestInvalidRegistrationNeverWrites(t *testing.T) {
 		{"name", func(r *models.RegisterRequest) { r.FullName = " " }},
 		{"phone", func(r *models.RegisterRequest) { r.Phone = "123" }},
 		{"short password", func(r *models.RegisterRequest) { r.Password = "short" }},
-		{"bcrypt limit", func(r *models.RegisterRequest) { r.Password = strings.Repeat("ก", 25) }},
+		{"long password", func(r *models.RegisterRequest) { r.Password = "abc123456" }},
+		{"wrong letter and digit counts", func(r *models.RegisterRequest) { r.Password = "abcd1234" }},
+		{"invalid character", func(r *models.RegisterRequest) { r.Password = "abc1234!" }},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

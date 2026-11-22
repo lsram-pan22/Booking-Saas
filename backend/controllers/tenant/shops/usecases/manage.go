@@ -29,7 +29,7 @@ func (u *ManageUsecase) Get(ctx context.Context, userID, shopID string) (models.
 }
 func (u *ManageUsecase) Update(ctx context.Context, userID, shopID string, req models.UpdateShopRequest) (models.Shop, error) {
 	req.Name = strings.TrimSpace(req.Name)
-	if (req.OpeningTime == nil) != (req.ClosingTime == nil) || (req.OpeningTime != nil && !utils.ValidShopHours(*req.OpeningTime, *req.ClosingTime)) {
+	if !validOptionalShopHours(req.OpeningTime, req.ClosingTime) {
 		return models.Shop{}, ErrInvalidShop
 	}
 	validType := req.BusinessType == "salon" || req.BusinessType == "spa" || req.BusinessType == "clinic" || req.BusinessType == "fitness" || req.BusinessType == "other"

@@ -1,16 +1,22 @@
 import type { RegistrationForm } from "../../../types/tenant/account.type";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Alert, App, Button, Card, Col, Descriptions, Divider, Drawer, Flex, Form, Grid, Input, Row, Space, Typography } from "antd";
+import { Alert, App, Button, Card, Col, Descriptions, Divider, Flex, Form, Grid, Input, Modal, Row, Space, Typography } from "antd";
 import { registerTenant } from "../../../api/tenant/account.api";
 
 import { CalendarOutlined, CheckCircleOutlined } from "@ant-design/icons";
+
+const registrationPasswordPattern = /^[0-9]*[A-Za-z][0-9]*[A-Za-z][0-9]*[A-Za-z][0-9]*$/;
 
 export default function Register() {
 	const { message } = App.useApp();
 	const [saving, setSaving] = useState(false);
 	const [registered, setRegistered] = useState(false);
   const [form] = Form.useForm<RegistrationForm>();
+  const password = Form.useWatch("password", form) ?? "";
+  const letterCount = (password.match(/[A-Za-z]/g) ?? []).length;
+  const digitCount = (password.match(/[0-9]/g) ?? []).length;
+  const passwordIsValid = password.length === 8 && registrationPasswordPattern.test(password);
   const screens = Grid.useBreakpoint();
   const [reviewOpen, setReviewOpen] = useState(false);
   const [review, setReview] = useState<Omit<RegistrationForm, "password" | "confirm_password">>();
@@ -71,9 +77,27 @@ export default function Register() {
                   <Col xs={24} sm={12}><Form.Item style={{ marginBottom: 12 }} name="full_name" label="ชื่อ–นามสกุล" rules={[{ required: true, whitespace: true, message: "กรุณากรอกชื่อ–นามสกุล" }]}><Input autoComplete="name" maxLength={100} placeholder="ชื่อผู้ดูแลธุรกิจ" /></Form.Item></Col>
                   <Col xs={24} sm={12}><Form.Item style={{ marginBottom: 12 }} name="phone" label="เบอร์โทรศัพท์" rules={[{ required: true, message: "กรุณากรอกเบอร์โทรศัพท์" }, { validator: (_, value: string) => !value || /^(?:0[0-9]{8,9}|\+66[0-9]{8,9})$/.test(value.replace(/[\s-]/g, "")) ? Promise.resolve() : Promise.reject(new Error("กรุณากรอกเบอร์โทรศัพท์ให้ถูกต้อง เช่น 0812345678")) }]}><Input type="tel" autoComplete="tel" maxLength={20} placeholder="0812345678" /></Form.Item></Col>
                   <Col span={24}><Form.Item style={{ marginBottom: 12 }} name="email" label="อีเมล" rules={[{ required: true, message: "กรุณากรอกอีเมล" }, { type: "email", message: "กรุณากรอกอีเมลให้ถูกต้อง" }]}><Input autoComplete="email" type="email" maxLength={254} placeholder="you@example.com" /></Form.Item></Col>
-                  <Col xs={24} sm={12}><Form.Item style={{ marginBottom: 12 }} name="password" label="รหัสผ่าน" extra="ใช้รหัสผ่านอย่างน้อย 12 ตัวอักษร" rules={[{ required: true, message: "กรุณากรอกรหัสผ่าน" }, { min: 12, message: "รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร" }, { validator: (_, value: string) => value && new TextEncoder().encode(value).length > 72 ? Promise.reject(new Error("รหัสผ่านยาวเกินไป กรุณาลดจำนวนตัวอักษร")) : Promise.resolve() }]}><Input.Password autoComplete="new-password" placeholder="ตั้งรหัสผ่าน" /></Form.Item></Col>
+                  <Col xs={24} sm={12}>
+                    <Form.Item
+                      style={{ marginBottom: 12 }}
+                      name="password"
+                      label="รหัสผ่าน"
+                      extra={password && !passwordIsValid ? (
+                        <Typography.Text type="danger" aria-live="polite">
+                          ตัวอักษร {letterCount}/3 · ตัวเลข {digitCount}/5
+                        </Typography.Text>
+                      ) : undefined}
+                      validateTrigger="onChange"
+                      rules={[
+                        { required: true, message: "กรุณากรอกรหัสผ่าน" },
+                        { len: 8, pattern: registrationPasswordPattern, message: "รหัสผ่านยังไม่ตรงตามเงื่อนไข" },
+                      ]}
+                    >
+                      <Input.Password autoComplete="new-password" placeholder="ตั้งรหัสผ่าน" />
+                    </Form.Item>
+                  </Col>
                   <Col xs={24} sm={12}><Form.Item style={{ marginBottom: 12 }} name="confirm_password" label="ยืนยันรหัสผ่าน" dependencies={["password"]} rules={[{ required: true, message: "กรุณายืนยันรหัสผ่าน" }, ({ getFieldValue }) => ({ validator: (_, value) => !value || value === getFieldValue("password") ? Promise.resolve() : Promise.reject(new Error("รหัสผ่านไม่ตรงกัน")) })]}><Input.Password autoComplete="new-password" placeholder="กรอกรหัสผ่านอีกครั้ง" /></Form.Item></Col>
-                  <Col span={24}><Button block type="primary" htmlType="submit">ตรวจสอบข้อมูลสมัคร</Button></Col>
+                  <Col span={24}><Button block type="primary" htmlType="submit" disabled={!passwordIsValid}>ตรวจสอบข้อมูลสมัคร</Button></Col>
                 </Row>
               </Form>
               <Typography.Paragraph style={{ textAlign: "center", marginTop: 16, marginBottom: 0 }}>มีบัญชีแล้ว? <Link to="/tenant/login">เข้าสู่ระบบ</Link></Typography.Paragraph>
@@ -81,16 +105,53 @@ export default function Register() {
           </Col>
         </Row>
       </div>
-      <Drawer title={registered ? "สมัครสมาชิกแล้ว" : "ตรวจสอบข้อมูลสมัคร Tenant"} placement="right" size="min(480px, 100vw)" open={reviewOpen} onClose={() => { if (!saving) setReviewOpen(false); }} closable={!saving} keyboard={!saving} mask={{ closable: !saving }} footer={<Flex justify="end" gap={8}><Button disabled={saving} onClick={() => setReviewOpen(false)}>{registered ? "ปิด" : "กลับไปแก้ไข"}</Button>{!registered && <Button type="primary" loading={saving} onClick={() => void submitRegistration()}>ยืนยันสมัครสมาชิก</Button>}</Flex>}>
+      <Modal
+        title={registered ? "สมัครสมาชิกแล้ว" : "ตรวจสอบข้อมูลการสมัคร"}
+        centered
+        width={480}
+        open={reviewOpen}
+        onCancel={() => { if (!saving) setReviewOpen(false); }}
+        closable={!saving}
+        keyboard={!saving}
+        mask={{ closable: !saving }}
+        footer={
+          <>
+            {!registered && (
+              <Typography.Text type="secondary" style={{ display: "block", marginTop: 12, marginBottom: 12, textAlign: "start" }}>
+                สมัครแล้วรับแพ็กเกจ Free อัตโนมัติ และเพิ่มร้านค้าได้ภายหลัง
+              </Typography.Text>
+            )}
+            <Flex justify="end" gap={8} wrap>
+              {!registered && (
+                <Button type="primary" loading={saving} onClick={() => void submitRegistration()}>
+                  ยืนยัน
+                </Button>
+              )}
+              <Button disabled={saving} onClick={() => setReviewOpen(false)}>
+                {registered ? "ปิด" : "ยกเลิก"}
+              </Button>
+            </Flex>
+          </>
+        }
+      >
         <Space orientation="vertical" size="large" style={{ width: "100%" }}>
-          <Alert type={registered ? "success" : "info"} showIcon title={registered ? "สร้างบัญชีเรียบร้อยแล้ว พร้อมแพ็กเกจ Free" : "กรุณาตรวจสอบข้อมูลก่อนยืนยัน"} description={registered ? "เข้าสู่ระบบเพื่อเริ่มเพิ่มร้านค้าของคุณ" : "สมัครแล้วรับแพ็กเกจ Free อัตโนมัติ และเพิ่มร้านค้าได้ภายหลัง"} />
-          <Descriptions column={1} bordered items={[
-            { key: "name", label: "ชื่อ–นามสกุล", children: review?.full_name },
-            { key: "phone", label: "เบอร์โทรศัพท์", children: review?.phone },
-            { key: "email", label: "อีเมล", children: review?.email },
-          ]} />
+          <Alert 
+            type={registered ? "success" : "info"} 
+            showIcon 
+            title={registered ? "สร้างบัญชีเรียบร้อยแล้ว พร้อมแพ็กเกจ Free" : "กรุณาตรวจสอบข้อมูลก่อนยืนยัน"} 
+            description={registered ? "เข้าสู่ระบบเพื่อเริ่มเพิ่มร้านค้าของคุณ" : undefined} 
+          />
+          <Descriptions 
+            column={1} 
+            bordered 
+            items={[
+              { key: "name", label: "ชื่อ–นามสกุล", children: review?.full_name },
+              { key: "phone", label: "เบอร์โทรศัพท์", children: review?.phone },
+              { key: "email", label: "อีเมล", children: review?.email },
+            ]} 
+          />
         </Space>
-      </Drawer>
+      </Modal>
     </main>
   );
 }

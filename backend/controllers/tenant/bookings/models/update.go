@@ -18,3 +18,11 @@ type BookingEditSnapshot struct {
 	EndsAt          time.Time `json:"ends_at"`
 	Status          string    `json:"status"`
 }
+
+type BookingEdit struct {
+	ID         string              `json:"id"`
+	EditorName string              `json:"editor_name"`
+	CreatedAt  time.Time           `json:"created_at"`
+	Before     BookingEditSnapshot `json:"before"`
+	After      BookingEditSnapshot `json:"after"`
+}

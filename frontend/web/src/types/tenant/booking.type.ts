@@ -121,3 +121,15 @@ export const bookingStatuses: Record<BookingStatus, { label: string; color: stri
   completed: { label: "เสร็จสิ้น", color: "green" },
   cancelled: { label: "ยกเลิก", color: "default" },
 };
+export type BookingEditSnapshot = Pick<Booking,
+  "customer_name" | "customer_phone" | "note" | "service_id" | "service_name" |
+  "duration_minutes" | "price_satang" | "starts_at" | "ends_at" | "status"
+>;
+
+export interface BookingEdit {
+  id: string;
+  editor_name: string;
+  created_at: string;
+  before: BookingEditSnapshot;
+  after: BookingEditSnapshot;
+}

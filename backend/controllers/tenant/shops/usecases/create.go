@@ -14,6 +14,13 @@ import (
 
 var ErrInvalidShop = errors.New("invalid shop data")
 
+func validOptionalShopHours(opening, closing *string) bool {
+	if opening == nil || closing == nil {
+		return opening == nil && closing == nil
+	}
+	return utils.ValidShopHours(*opening, *closing)
+}
+
 type ShopRepository interface {
 	Create(context.Context, string, models.NewShop) (models.Shop, error)
 }
@@ -23,14 +30,20 @@ func NewShopUsecase(repo ShopRepository) *ShopUsecase { return &ShopUsecase{Repo
 func (u *ShopUsecase) Create(ctx context.Context, userID string, req models.CreateShopRequest) (models.Shop, error) {
 	req.Name = strings.TrimSpace(req.Name)
 	validType := req.BusinessType == "salon" || req.BusinessType == "spa" || req.BusinessType == "clinic" || req.BusinessType == "fitness" || req.BusinessType == "other"
-	if !utils.ValidUserID(userID) || req.Name == "" || utf8.RuneCountInString(req.Name) > 150 || !validType {
+	if !utils.ValidUserID(userID) || req.Name == "" || utf8.RuneCountInString(req.Name) > 150 || !validType || !validOptionalShopHours(req.OpeningTime, req.ClosingTime) {
 		return models.Shop{}, ErrInvalidShop
 	}
 	var random [16]byte
 	if _, err := rand.Read(random[:]); err != nil {
 		return models.Shop{}, err
 	}
-	input := models.NewShop{Name: req.Name, BusinessType: req.BusinessType, Slug: "shop-" + hex.EncodeToString(random[:])}
+	input := models.NewShop{
+		Name:         req.Name,
+		BusinessType: req.BusinessType,
+		Slug:         "shop-" + hex.EncodeToString(random[:]),
+		OpeningTime:  req.OpeningTime,
+		ClosingTime:  req.ClosingTime,
+	}
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	return u.Repo.Create(ctx, userID, input)

@@ -197,6 +197,16 @@ func TestBookingIntegration(t *testing.T) {
 	if err = pool.QueryRow(ctx, `SELECT changed_by::text,before_data->>'customer_name',after_data->>'customer_name' FROM booking_edit_history WHERE booking_id=$1`, firstBooking.ID).Scan(&editor, &beforeName, &afterName); err != nil || editor != staff || beforeName != firstBooking.CustomerName || afterName != customerInput.CustomerName {
 		t.Fatal("customer audit data incorrect", err)
 	}
+	for _, viewer := range []string{owner, staff} {
+		history, err := repo.EditHistory(ctx, viewer, first, firstBooking.ID)
+		if err != nil || len(history) != 1 || history[0].EditorName == "" || history[0].Before.CustomerName != beforeName || history[0].After.CustomerName != afterName {
+			t.Fatal("authorized editor history incorrect", err)
+		}
+	}
+	_, err = repo.EditHistory(ctx, other, second, firstBooking.ID)
+	expect(err, ErrNotFound)
+	_, err = repo.EditHistory(ctx, other, first, firstBooking.ID)
+	expect(err, ErrNotFound)
 	if _, err = repo.SetStatus(ctx, staff, first, firstBooking.ID, "confirmed", ""); err != nil {
 		t.Fatal(err)
 	}

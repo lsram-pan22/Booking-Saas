@@ -1,21 +1,25 @@
 package routes
 
 import (
-	"booking-saas/config"
 	"booking-saas/controllers/tenant/bookings/ctrls"
 	"booking-saas/controllers/tenant/bookings/repositories"
 	"booking-saas/controllers/tenant/bookings/usecases"
 	"booking-saas/middleware"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func tenantBookingRoutes(tenant *gin.RouterGroup, db *pgxpool.Pool, cfg *config.Config) {
-	ctrl := ctrls.NewBookingController(usecases.NewBookingUsecase(repositories.NewBookingRepository(db)))
-	routes := tenant.Group("/shops/:shopID/bookings", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, false))
-	routes.GET("", ctrl.List)
-	routes.POST("", ctrl.Create)
-	routes.PATCH("/:bookingID", ctrl.Update)
-	routes.PATCH("/:bookingID/status", ctrl.SetStatus)
-	routes.PATCH("/:bookingID/customer", ctrl.UpdateCustomer)
+func tenantBookingRoutes(active *gin.RouterGroup, db *pgxpool.Pool) {
+	bookingRepository := repositories.NewBookingRepository(db)
+	bookingUsecase := usecases.NewBookingUsecase(bookingRepository)
+	bookingController := ctrls.NewBookingController(bookingUsecase)
+
+	bookings := active.Group("/shops/:shopID/bookings", middleware.RequireShopAccess(db, false))
+	bookings.GET("", bookingController.List)
+	bookings.GET("/:bookingID/edit-history", bookingController.EditHistory)
+	bookings.POST("", bookingController.Create)
+	bookings.PATCH("/:bookingID", bookingController.Update)
+	bookings.PATCH("/:bookingID/status", bookingController.SetStatus)
+	bookings.PATCH("/:bookingID/customer", bookingController.UpdateCustomer)
 }

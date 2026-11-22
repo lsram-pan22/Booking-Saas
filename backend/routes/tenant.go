@@ -1,15 +1,16 @@
 package routes
 
 import (
+	"time"
+
 	"booking-saas/config"
-	"booking-saas/controllers/tenant/account/ctrls"
-	"booking-saas/controllers/tenant/account/repositories"
-	"booking-saas/controllers/tenant/account/usecases"
+	accountCtrl "booking-saas/controllers/tenant/account/ctrls"
+	accountRepo "booking-saas/controllers/tenant/account/repositories"
+	accountUsecase "booking-saas/controllers/tenant/account/usecases"
 	shopCtrl "booking-saas/controllers/tenant/shops/ctrls"
 	shopRepo "booking-saas/controllers/tenant/shops/repositories"
 	shopUsecase "booking-saas/controllers/tenant/shops/usecases"
 	"booking-saas/middleware"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,47 +21,78 @@ func TenantRoutes(
 	db *pgxpool.Pool,
 	cfg *config.Config,
 ) {
-	auth := router.Group("/tenant")
+	tenant := router.Group("/tenant")
+	requireJWT := middleware.RequireJWT(cfg.JWT.Secret)
+	requireTenant := middleware.RequireRole("user")
+
+	// Registration and authentication
+	registerRepository := accountRepo.NewRegisterRepository(db)
+	registerUsecase := accountUsecase.NewRegisterUsecase(registerRepository)
+	registerController := accountCtrl.NewRegisterController(registerUsecase)
+
+	loginRepository := accountRepo.NewLoginRepository(db)
+	loginUsecase := accountUsecase.NewLoginUsecase(loginRepository, cfg)
+	loginController := accountCtrl.NewLoginController(loginUsecase)
+
+	tenant.POST("/register", registerController.Register)
+	tenant.POST("/login", loginController.Login)
+	tenant.POST("/logout",
+		requireJWT,
+		requireTenant,
+		middleware.RequireSession(db, true, true),
+		accountCtrl.LogoutAllSessions(db),
+	)
+
+	authenticated := tenant.Group("", requireJWT, requireTenant)
+	account := authenticated.Group("", middleware.RequireSession(db, true))
+	active := authenticated.Group("", middleware.RequireSession(db, false))
+
+	// Account and passwords
+	settingsRepository := accountRepo.NewSettingsRepository(db)
+	settingsUsecase := accountUsecase.NewSettingsUsecase(settingsRepository)
+	settingsController := accountCtrl.NewSettingsController(settingsUsecase)
+
+	passwordRepository := accountRepo.NewPasswordRepository(db)
+	passwordUsecase := accountUsecase.NewPasswordUsecase(passwordRepository)
+	passwordController := accountCtrl.NewPasswordController(passwordUsecase)
 	passwordLimit := middleware.NewRateLimiter(10, 15*time.Minute)
-	auth.POST("/logout", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, true, true), ctrls.LogoutAllSessions(db))
-	tenantServiceRoutes(auth, db, cfg)
-	tenantBookingRoutes(auth, db, cfg)
 
-	repo := repositories.NewRegisterRepository(db)
-	usecase := usecases.NewRegisterUsecase(repo)
-	ctrl := ctrls.NewRegisterController(usecase)
+	account.GET("/me", loginController.Me)
+	account.POST("/password/change", passwordLimit.ByActor(), passwordController.Change)
+	active.PATCH("/me", settingsController.Update)
 
-	auth.POST("/register", ctrl.Register)
-	loginRepo := repositories.NewLoginRepository(db)
-	loginUsecase := usecases.NewLoginUsecase(loginRepo, cfg)
-	loginCtrl := ctrls.NewLoginController(loginUsecase)
-	auth.POST("/login", loginCtrl.Login)
-	auth.GET("/me", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, true), loginCtrl.Me)
-	planCtrl := ctrls.NewPlanController(usecases.NewPlanUsecase(repositories.NewPlanRepository(db)))
-	auth.GET("/subscription", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), planCtrl.Overview)
-	auth.PUT("/subscription/selection", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), planCtrl.Select)
-	passwordCtrl := ctrls.NewPasswordController(usecases.NewPasswordUsecase(repositories.NewPasswordRepository(db)))
-	auth.POST("/password/change", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, true), passwordLimit.ByActor(), passwordCtrl.Change)
-	auth.POST("/shops/:shopID/users/:userID/password/reset", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), passwordLimit.ByActor(), passwordCtrl.Reset)
-	settingsRepo := repositories.NewSettingsRepository(db)
-	settingsUsecase := usecases.NewSettingsUsecase(settingsRepo)
-	settingsCtrl := ctrls.NewSettingsController(settingsUsecase)
-	auth.PATCH("/me", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), settingsCtrl.Update)
-	shopsRepository := shopRepo.NewShopRepository(db)
-	shopsUsecase := shopUsecase.NewShopUsecase(shopsRepository)
-	shopsController := shopCtrl.NewShopController(shopsUsecase)
-	auth.POST("/shops", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), shopsController.Create)
-	manageUsecase := shopUsecase.NewManageUsecase(shopsRepository)
+	// Subscription
+	planRepository := accountRepo.NewPlanRepository(db)
+	planUsecase := accountUsecase.NewPlanUsecase(planRepository)
+	planController := accountCtrl.NewPlanController(planUsecase)
+
+	active.GET("/subscription", planController.Overview)
+	active.PUT("/subscription/selection", planController.Select)
+
+	// Shops and members
+	shopRepository := shopRepo.NewShopRepository(db)
+	shopService := shopUsecase.NewShopUsecase(shopRepository)
+	shopController := shopCtrl.NewShopController(shopService)
+
+	manageUsecase := shopUsecase.NewManageUsecase(shopRepository)
 	manageController := shopCtrl.NewManageController(manageUsecase)
-	auth.GET("/shops/:shopID", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), manageController.Get)
-	auth.PATCH("/shops/:shopID", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), manageController.Update)
-	membersUsecase := shopUsecase.NewMembersUsecase(shopsRepository)
+	membersUsecase := shopUsecase.NewMembersUsecase(shopRepository)
 	membersController := shopCtrl.NewMembersController(membersUsecase)
-	auth.GET("/shops/:shopID/members", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), membersController.List)
-	addMemberUsecase := shopUsecase.NewAddMemberUsecase(shopsRepository)
+	addMemberUsecase := shopUsecase.NewAddMemberUsecase(shopRepository)
 	addMemberController := shopCtrl.NewAddMemberController(addMemberUsecase)
-	auth.POST("/shops/:shopID/members", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), addMemberController.Add)
-	memberStatusUsecase := shopUsecase.NewMemberStatusUsecase(shopsRepository)
+	memberStatusUsecase := shopUsecase.NewMemberStatusUsecase(shopRepository)
 	memberStatusController := shopCtrl.NewMemberStatusController(memberStatusUsecase)
-	auth.PATCH("/shops/:shopID/members/:memberID", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole("user"), middleware.RequireSession(db, false), middleware.RequireShopAccess(db, true), memberStatusController.Set)
+
+	active.POST("/shops", shopController.Create)
+
+	shop := active.Group("/shops/:shopID", middleware.RequireShopAccess(db, true))
+	shop.GET("", manageController.Get)
+	shop.PATCH("", manageController.Update)
+	shop.GET("/members", membersController.List)
+	shop.POST("/members", addMemberController.Add)
+	shop.PATCH("/members/:memberID", memberStatusController.Set)
+	shop.POST("/users/:userID/password/reset", passwordLimit.ByActor(), passwordController.Reset)
+
+	tenantServiceRoutes(active, db)
+	tenantBookingRoutes(active, db)
 }

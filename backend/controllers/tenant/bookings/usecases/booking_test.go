@@ -18,6 +18,10 @@ type fakeRepo struct {
 	customer models.CustomerRequest
 }
 
+func (r *fakeRepo) EditHistory(context.Context, string, string, string) ([]models.BookingEdit, error) {
+	return nil, nil
+}
+
 func (r *fakeRepo) Update(_ context.Context, _, _, _ string, req models.UpdateBookingRequest) (models.Booking, error) {
 	r.calls++
 	r.update = req

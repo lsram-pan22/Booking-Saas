@@ -3,6 +3,7 @@ import { Alert, App, Button, Col, DatePicker, Drawer, Flex, Form, Input, Row, Se
 import dayjs from "dayjs";
 import { updateBooking } from "../../../api/tenant/bookings.api";
 import type { EditBookingDrawerProps, EditBookingForm } from "../../../types/tenant/booking.type";
+import BookingStartTimeField from "./BookingStartTimeField";
 
 const thaiDate = (value: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
 const thaiTime = (value: string) => new Date(value).toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -42,7 +43,7 @@ export default function EditBookingDrawer({ shopID, booking, services, openingTi
         <Col span={24}><Form.Item name="customer_phone" label="เบอร์โทรศัพท์" rules={[{ required: true, message: "กรุณากรอกเบอร์โทรศัพท์" }, { pattern: /^[+0-9() -]{7,30}$/, message: "รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง" }, { validator: (_, value: string) => { const digits = (value || "").replace(/\D/g, "").length; return !value || (digits >= 7 && digits <= 15) ? Promise.resolve() : Promise.reject(new Error("กรุณากรอกหมายเลข 7–15 หลัก")); } }]}><Input type="tel" maxLength={30} /></Form.Item></Col>
         <Col span={24}><Form.Item name="service_id" label="บริการ" rules={[{ required: true, message: "กรุณาเลือกบริการ" }]}><Select showSearch optionFilterProp="label" options={options.map(item => ({ value: item.id, label: `${item.name} (${item.duration_minutes} นาที)${item.id === booking.service_id ? " · บริการเดิม" : ""}` }))} /></Form.Item></Col>
         <Col xs={24} sm={12}><Form.Item name="date" label="วันที่ (เวลาไทย)" rules={[{ required: true, message: "กรุณาเลือกวันที่" }]}><DatePicker format="DD/MM/YYYY" placeholder="DD/MM/YYYY" style={{ width: "100%" }} /></Form.Item></Col>
-        <Col xs={24} sm={12}><Form.Item name="time" label="เวลาเริ่ม" extra={openingTime && closingTime ? `ร้านเปิด ${openingTime}–${closingTime} น.` : undefined} rules={[{ required: true, message: "กรุณาเลือกเวลา" }]}><Input type="time" step={60} /></Form.Item></Col>
+        <BookingStartTimeField openingTime={openingTime} closingTime={closingTime} />
         <Col span={24}><Form.Item name="note" label="หมายเหตุ" rules={[{ max: 2000, message: "ระบุหมายเหตุได้ไม่เกิน 2,000 ตัวอักษร" }]}><Input.TextArea rows={3} maxLength={2000} showCount /></Form.Item></Col>
         {selectedService && <Col span={24}><Alert type="info" showIcon title={`${selectedService.duration_minutes} นาที · ${(selectedService.price_satang / 100).toLocaleString("th-TH", { style: "currency", currency: "THB" })}`} description={previewEnd ? `สิ้นสุด ${new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Bangkok", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(previewEnd)} น.` : undefined} /></Col>}
       </Row>

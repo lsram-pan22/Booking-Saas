@@ -1,10 +1,12 @@
 package routes
 
 import (
+	"time"
+
 	"booking-saas/config"
-	superAdmin "booking-saas/controllers/super_admin/auth/ctrls"
-	superAdminRepo "booking-saas/controllers/super_admin/auth/repositories"
-	superAdminUsecase "booking-saas/controllers/super_admin/auth/usecases"
+	authCtrl "booking-saas/controllers/super_admin/auth/ctrls"
+	authRepo "booking-saas/controllers/super_admin/auth/repositories"
+	authUsecase "booking-saas/controllers/super_admin/auth/usecases"
 	packageCtrl "booking-saas/controllers/super_admin/packages/ctrls"
 	packageRepo "booking-saas/controllers/super_admin/packages/repositories"
 	packageUsecase "booking-saas/controllers/super_admin/packages/usecases"
@@ -13,7 +15,6 @@ import (
 	accountUsecase "booking-saas/controllers/tenant/account/usecases"
 	"booking-saas/middleware"
 	"booking-saas/utils"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,28 +25,43 @@ func SuperAdminRoutes(
 	db *pgxpool.Pool,
 	cfg *config.Config,
 ) {
-	auth := router.Group("/super-admin")
-	passwordLimit := middleware.NewRateLimiter(10, 15*time.Minute)
-	auth.POST("/logout", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole(utils.RoleSuperAdmin), middleware.RequireSession(db, true, true), accountCtrl.LogoutAllSessions(db))
+	superAdmin := router.Group("/super-admin")
+	requireJWT := middleware.RequireJWT(cfg.JWT.Secret)
+	requireSuperAdmin := middleware.RequireRole(utils.RoleSuperAdmin)
 
-	// Super Admin
-	superAdminRepository := superAdminRepo.NewUserRepository(db)
-	superAdminLogin := superAdminUsecase.NewLoginUsecase(
-		superAdminRepository,
-		cfg,
+	// Login and logout
+	loginRepository := authRepo.NewUserRepository(db)
+	loginUsecase := authUsecase.NewLoginUsecase(loginRepository, cfg)
+	loginController := authCtrl.NewLoginController(loginUsecase)
+
+	superAdmin.POST("/login", loginController.Login)
+	superAdmin.POST("/logout",
+		requireJWT,
+		requireSuperAdmin,
+		middleware.RequireSession(db, true, true),
+		accountCtrl.LogoutAllSessions(db),
 	)
-	superAdminController := superAdmin.NewLoginController(superAdminLogin)
 
-	auth.POST("/login", superAdminController.Login)
+	admin := superAdmin.Group("").Use(
+		requireJWT,
+		requireSuperAdmin,
+		middleware.RequireSession(db, false),
+	)
 
-	// Package management requires a verified Super Admin token.
-	admin := auth.Group("", middleware.RequireJWT(cfg.JWT.Secret), middleware.RequireRole(utils.RoleSuperAdmin), middleware.RequireSession(db, false))
-	passwordCtrl := accountCtrl.NewPasswordController(accountUsecase.NewPasswordUsecase(accountRepo.NewPasswordRepository(db)))
-	admin.GET("/users", passwordCtrl.Owners)
-	admin.POST("/users/:userID/password/reset", passwordLimit.ByActor(), passwordCtrl.Reset)
+	// User management
+	passwordRepository := accountRepo.NewPasswordRepository(db)
+	passwordUsecase := accountUsecase.NewPasswordUsecase(passwordRepository)
+	passwordController := accountCtrl.NewPasswordController(passwordUsecase)
+	passwordLimit := middleware.NewRateLimiter(10, 15*time.Minute)
+
+	admin.GET("/users", passwordController.Owners)
+	admin.POST("/users/:userID/password/reset", passwordLimit.ByActor(), passwordController.Reset)
+
+	// Package management
 	packageRepository := packageRepo.NewPackageRepository(db)
-	packageService := packageUsecase.NewPackageUsecase(packageRepository)
-	packageController := packageCtrl.NewPackageController(packageService)
+	packages := packageUsecase.NewPackageUsecase(packageRepository)
+	packageController := packageCtrl.NewPackageController(packages)
+
 	admin.GET("/packages", packageController.List)
 	admin.POST("/packages", packageController.Create)
 	admin.PUT("/packages/:id", packageController.Update)

@@ -17,6 +17,20 @@ type BookingController struct{ Usecase *usecases.BookingUsecase }
 func NewBookingController(u *usecases.BookingUsecase) *BookingController {
 	return &BookingController{Usecase: u}
 }
+
+func (ctrl *BookingController) EditHistory(c *gin.Context) {
+	claims, ok := middleware.AuthClaims(c)
+	if !ok {
+		c.AbortWithStatus(401)
+		return
+	}
+	data, err := ctrl.Usecase.EditHistory(c.Request.Context(), claims.UserID, c.Param("shopID"), c.Param("bookingID"))
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(200, gin.H{"success": true, "data": data})
+}
 func (ctrl *BookingController) List(c *gin.Context) {
 	claims, ok := middleware.AuthClaims(c)
 	if !ok {

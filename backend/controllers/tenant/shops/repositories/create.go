@@ -57,7 +57,11 @@ func (r *ShopRepository) Create(ctx context.Context, userID string, input models
 	if ownedShopCount >= shopLimit {
 		return shop, ErrShopLimit
 	}
-	err = tx.QueryRow(ctx, `INSERT INTO tenants(name,slug,business_type,timezone,status) VALUES($1,$2,$3,'Asia/Bangkok','active') RETURNING id::text,name,business_type,slug,status`, input.Name, input.Slug, input.BusinessType).Scan(&shop.ID, &shop.Name, &shop.BusinessType, &shop.Slug, &shop.Status)
+	err = tx.QueryRow(ctx, `INSERT INTO tenants(name,slug,business_type,timezone,status,opening_time,closing_time)
+ VALUES($1,$2,$3,'Asia/Bangkok','active',$4,$5)
+ RETURNING id::text,name,business_type,slug,status,opening_time,closing_time`,
+		input.Name, input.Slug, input.BusinessType, input.OpeningTime, input.ClosingTime,
+	).Scan(&shop.ID, &shop.Name, &shop.BusinessType, &shop.Slug, &shop.Status, &shop.OpeningTime, &shop.ClosingTime)
 	if err != nil {
 		return shop, err
 	}

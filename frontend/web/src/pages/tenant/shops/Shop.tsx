@@ -7,6 +7,7 @@ import { businessTypes, shopStatusLabels } from "../../../types/tenant/shop.type
 import type { EditShopForm, ShopDetails, ShopDetailsProps, ShopMember, ShopMembers } from "../../../types/tenant/shop.type";
 import ShopMembersCard from "../../../components/shops/tenant/ShopMembersCard";
 import AddMemberDrawer from "../../../components/shops/tenant/AddMemberDrawer";
+import ShopHoursFields from "../../../components/shops/tenant/ShopHoursFields";
 import type { TenantLayoutContext } from "../../../types/tenant/layout.type";
 
 function ShopDetailsView({ shopID }: ShopDetailsProps) {
@@ -83,8 +84,7 @@ function ShopDetailsView({ shopID }: ShopDetailsProps) {
         <Row gutter={16}>
           <Col span={24}><Form.Item name="name" label="ชื่อร้านค้า" rules={[{ required: true, whitespace: true, message: "กรุณากรอกชื่อร้านค้า" }]}><Input maxLength={150} /></Form.Item></Col>
           <Col span={24}><Form.Item name="business_type" label="ประเภทธุรกิจ" rules={[{ required: true, message: "กรุณาเลือกประเภทธุรกิจ" }]}><Select options={businessTypes} /></Form.Item></Col>
-          <Col xs={24} sm={12}><Form.Item name="opening_time" label="เวลาเปิดร้าน" rules={[{ required: true, message: "กรุณาระบุเวลาเปิด" }, { pattern: /^([01]\d|2[0-3]):[0-5]\d$/, message: "ใช้รูปแบบ HH:mm เช่น 09:00" }]}><Input placeholder="09:00" maxLength={5} /></Form.Item></Col>
-          <Col xs={24} sm={12}><Form.Item name="closing_time" label="เวลาปิดร้าน" dependencies={["opening_time"]} extra="เวลาเดียวกันทุกวัน ปิดเที่ยงคืนใช้ 24:00" rules={[{ required: true, message: "กรุณาระบุเวลาปิด" }, { pattern: /^(([01]\d|2[0-3]):[0-5]\d|24:00)$/, message: "ใช้รูปแบบ HH:mm เช่น 18:00" }, ({ getFieldValue }) => ({ validator: (_, value: string) => !value || value > getFieldValue("opening_time") ? Promise.resolve() : Promise.reject(new Error("เวลาปิดต้องหลังเวลาเปิดในวันเดียวกัน")) })]}><Input placeholder="18:00" maxLength={5} /></Form.Item></Col>
+          <ShopHoursFields />
           <Col span={24}><Form.Item name="active" label="เปิดใช้งานร้านค้า" valuePropName="checked" extra="ปิดใช้งานแล้วเจ้าของร้านยังเข้ามาเปิดกลับได้ ร้านยังนับรวมในโควตาแพ็กเกจ"><Switch checkedChildren="เปิด" unCheckedChildren="ปิด" /></Form.Item></Col>
         </Row>
       </Form>

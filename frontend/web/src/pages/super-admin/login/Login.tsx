@@ -63,8 +63,12 @@ export default function Login() {
       justify="center"
       align="center"
       style={{
-        minHeight: "100vh",
-        padding: 24,
+        position: "fixed",
+        inset: 0,
+        height: "100dvh",
+        boxSizing: "border-box",
+        overflow: "hidden",
+        padding: "clamp(8px, 3dvh, 24px) 24px",
         background: "#F3F5F2",
       }}
     >
@@ -75,13 +79,13 @@ export default function Login() {
           borderRadius: 16,
           boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
         }}
-        styles={{ body: { padding: 32 } }}
+        styles={{ body: { padding: "clamp(12px, 5dvh, 32px)" } }}
       >
         <Flex
           vertical
           align="center"
           gap={8}
-          style={{ marginBottom: 32 }}
+          style={{ marginBottom: "clamp(12px, 5dvh, 32px)" }}
         >
           <SafetyCertificateOutlined
             style={{

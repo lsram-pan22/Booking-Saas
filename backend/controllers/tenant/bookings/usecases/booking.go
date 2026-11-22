@@ -15,6 +15,7 @@ var ErrInvalid = errors.New("invalid booking request")
 var ErrInvalidRemark = errors.New("cancellation remark required, maximum 1000 characters")
 
 type BookingRepository interface {
+	EditHistory(context.Context, string, string, string) ([]models.BookingEdit, error)
 	Update(context.Context, string, string, string, models.UpdateBookingRequest) (models.Booking, error)
 	UpdateCustomer(context.Context, string, string, string, models.CustomerRequest) (models.Booking, error)
 	List(context.Context, string, string, time.Time) (models.BookingList, error)
